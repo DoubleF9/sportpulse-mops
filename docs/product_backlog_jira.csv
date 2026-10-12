@@ -1,0 +1,289 @@
+﻿"Issue Type","Summary","Description","Priority","Story Points","Labels","Backlog Rank"
+"Story","US20 - Încărcare rapidă a datelor (cache server-side)","Ca vizitator, vreau ca paginile să se încarce rapid și să funcționeze chiar și când limita zilnică a API-ului este atinsă, pentru a avea o experiență fluidă.
+
+Criterii de acceptare:
+AC1. Cheia API nu apare în codul frontend și nici în repository (este citită dintr-o variabilă de mediu pe server).
+AC2. Dată fiind o cerere identică în perioada TTL, când este repetată, atunci nu se face nicio cerere nouă către API-Sports.
+AC3. Răspunsul backend-ului pentru date aflate în cache durează sub 500 ms.
+AC4. Dacă API-Sports întoarce eroare sau limita zilnică este atinsă, se returnează ultimele date salvate, marcate „actualizat la HH:MM”.
+AC5. Există un contor de cereri zilnice per sport (folosit de US26).
+
+Dependente: —
+Cerinte: FR16, NFR-01, NFR-02
+Note: Implementare: strat de cache pe server cu TTL diferențiat (live 60 s, program zilnic 1 h, clasamente 6 h, echipe/jucători 24 h). Este primul în backlog pentru că toate celelalte povești depind de el și reduce cel mai mare risc tehnic (limita de 100 cereri/zi).","Highest","8","MoSCoW-Must","1"
+"Story","US01 - Selectarea sportului","Ca vizitator, vreau să aleg sportul care mă interesează (fotbal, baschet, hochei) dintr-un meniu, pentru a vedea doar meciurile din acel sport.
+
+Criterii de acceptare:
+AC1. Meniul afișează toate sporturile active (minim fotbal, baschet, hochei).
+AC2. La selectarea unui sport, lista de meciuri se reîncarcă doar cu meciurile acelui sport, fără reîncărcarea întregii pagini.
+AC3. Sportul selectat este evidențiat și este păstrat la revenirea în aplicație (în același browser).
+AC4. La prima accesare este selectat implicit fotbalul.
+
+Dependente: —
+Cerinte: FR1
+","Highest","2","MoSCoW-Must","2"
+"Story","US02 - Programul meciurilor din ziua curentă","Ca vizitator, vreau să văd lista meciurilor de azi pentru sportul ales, grupate pe competiții, pentru a ști rapid ce meciuri se joacă.
+
+Criterii de acceptare:
+AC1. Meciurile sunt grupate pe țară + competiție, cu sigla competiției.
+AC2. Fiecare meci afișează ora de start, echipele cu sigle, scorul (dacă a început) și statusul: Programat / Live / Final / Amânat.
+AC3. În cadrul unei competiții, meciurile sunt sortate după ora de start.
+AC4. Dacă nu există meciuri, se afișează mesajul „Nu există meciuri pentru această zi”.
+
+Dependente: US01, US20
+Cerinte: FR2
+","Highest","5","MoSCoW-Must","3"
+"Story","US22 - Ore afișate în fusul orar local","Ca vizitator, vreau ca orele meciurilor să fie afișate în fusul meu orar, pentru a nu calcula diferențe de oră.
+
+Criterii de acceptare:
+AC1. Fusul orar este detectat automat din browser.
+AC2. Toate orele din aplicație sunt afișate în acest fus orar.
+AC3. Un meci programat la 21:00 UTC apare la 00:00 în UTC+3 și este listat în ziua următoare.
+AC4. Utilizatorul autentificat poate seta manual un alt fus orar.
+
+Dependente: US02
+Cerinte: FR14
+","Highest","2","MoSCoW-Must","4"
+"Story","US03 - Navigarea între zile","Ca vizitator, vreau să navighez între zile (ieri, azi, mâine și un calendar de ±7 zile), pentru a vedea rezultatele trecute și meciurile care urmează.
+
+Criterii de acceptare:
+AC1. Există o bară cu zilele de la -3 la +3 față de azi și un buton de calendar.
+AC2. Selectarea unei zile încarcă meciurile acelei zile.
+AC3. Ziua curentă este marcată cu eticheta „Azi”.
+AC4. Zilele din afara intervalului suportat (±7 zile) sunt dezactivate în calendar.
+
+Dependente: US02
+Cerinte: FR2
+","Highest","3","MoSCoW-Must","5"
+"Story","US06 - Pagina meciului – informații de bază","Ca vizitator, vreau să deschid pagina unui meci și să văd informațiile principale, pentru a afla contextul meciului.
+
+Criterii de acceptare:
+AC1. Click pe un meci deschide pagina dedicată, cu URL propriu (poate fi distribuit).
+AC2. Se afișează: echipe și sigle, scor (inclusiv la pauză), status/minut, competiție și etapă, data și ora locală, stadion, arbitru.
+AC3. Câmpurile care lipsesc din răspunsul API sunt afișate ca „—”, fără erori.
+
+Dependente: US02
+Cerinte: FR5
+Note: Story de referință pentru Planning Poker (3 SP).","Highest","3","MoSCoW-Must","6"
+"Story","US04 - Scoruri live actualizate automat","Ca vizitator, vreau ca scorurile meciurilor în desfășurare să se actualizeze automat, pentru a urmări meciurile fără să reîmprospătez pagina.
+
+Criterii de acceptare:
+AC1. Filtrul „Live” afișează doar meciurile în desfășurare.
+AC2. Scorul și minutul se actualizează la cel mult 60 s, fără refresh manual.
+AC3. Când scorul unui meci se schimbă, meciul este evidențiat vizual timp de 5 s.
+AC4. Când meciul se termină, statusul devine „Final” și meciul dispare din filtrul Live.
+
+Dependente: US02, US20
+Cerinte: FR3
+","Highest","5","MoSCoW-Must","7"
+"Story","US10 - Clasamentul competiției","Ca vizitator, vreau să văd clasamentul unei competiții, pentru a înțelege poziția echipelor.
+
+Criterii de acceptare:
+AC1. Coloane: poziție, echipă, meciuri jucate, V/E/Î, golaveraj, puncte, forma (ultimele 5 meciuri).
+AC2. Competițiile cu grupe afișează câte un tabel pentru fiecare grupă.
+AC3. Zonele de calificare/retrogradare sunt colorate conform descrierii din API.
+AC4. Clasamentul este accesibil din pagina meciului și din lista competiției.
+
+Dependente: US01, US20
+Cerinte: FR6
+","Highest","5","MoSCoW-Must","8"
+"Story","US05 - Filtrare după țară și competiție","Ca vizitator, vreau să filtrez meciurile după țară și competiție, pentru a vedea doar ligile care mă interesează.
+
+Criterii de acceptare:
+AC1. Filtrul listează țările și competițiile care au meciuri în ziua selectată.
+AC2. Se pot selecta mai multe competiții simultan.
+AC3. Filtrul se combină cu ziua selectată și cu filtrul Live.
+AC4. Butonul „Resetează filtrele” revine la lista completă.
+
+Dependente: US02
+Cerinte: FR4
+","High","3","MoSCoW-Should","9"
+"Story","US11 - Pagina echipei","Ca vizitator, vreau să deschid pagina unei echipe, pentru a vedea informațiile ei, ultimele rezultate și următoarele meciuri.
+
+Criterii de acceptare:
+AC1. Se afișează nume, siglă, țară, an fondare, stadion.
+AC2. Ultimele 5 rezultate sunt afișate cu indicator colorat V/E/Î.
+AC3. Următoarele 5 meciuri sunt afișate cu dată și adversar.
+AC4. Pagina este accesibilă din pagina meciului, din clasament și din căutare.
+
+Dependente: US06
+Cerinte: FR7
+","High","5","MoSCoW-Should","10"
+"Story","US12 - Lotul echipei","Ca vizitator, vreau să văd lotul de jucători al unei echipe, grupat pe posturi, pentru a cunoaște jucătorii.
+
+Criterii de acceptare:
+AC1. Jucătorii sunt grupați pe posturi (ex. fotbal: portari, fundași, mijlocași, atacanți).
+AC2. Pentru fiecare jucător: fotografie, nume, număr, vârstă.
+AC3. Click pe un jucător deschide profilul acestuia (US13).
+
+Dependente: US11
+Cerinte: FR7
+","High","3","MoSCoW-Should","11"
+"Story","US13 - Profilul jucătorului","Ca vizitator, vreau să văd profilul unui jucător cu statisticile din sezon, pentru a-i evalua forma.
+
+Criterii de acceptare:
+AC1. Date personale: nume, vârstă, naționalitate, înălțime, poziție, fotografie.
+AC2. Statistici sezon (fotbal): meciuri, minute, goluri, pase decisive, cartonașe.
+AC3. Se poate alege sezonul dintre cele disponibile în planul API.
+AC4. Dacă statisticile lipsesc, se afișează un mesaj explicit, nu o pagină goală.
+
+Dependente: US12
+Cerinte: FR8
+","High","5","MoSCoW-Should","12"
+"Story","US07 - Cronologia evenimentelor din meci","Ca vizitator, vreau să văd cronologia evenimentelor unui meci (goluri, cartonașe, schimbări), pentru a înțelege desfășurarea lui.
+
+Criterii de acceptare:
+AC1. Evenimentele sunt ordonate după minut și au iconiță de tip, jucător și echipă.
+AC2. Golurile afișează și autorul pasei decisive, dacă există.
+AC3. Pentru meciurile live, cronologia se actualizează odată cu scorul.
+AC4. Pentru sporturile la care API-ul nu oferă evenimente, secțiunea este ascunsă.
+
+Dependente: US06, US04
+Cerinte: FR5
+","High","5","MoSCoW-Should","13"
+"Story","US14 - Căutare echipe, jucători, competiții","Ca vizitator, vreau să caut o echipă, un jucător sau o competiție după nume, pentru a ajunge rapid la pagina dorită.
+
+Criterii de acceptare:
+AC1. Căutarea pornește de la minim 3 caractere.
+AC2. Rezultatele sunt grupate pe tip (echipe / jucători / competiții), maxim 10 per tip.
+AC3. Click pe un rezultat deschide pagina corespunzătoare.
+AC4. Fără rezultate se afișează „Niciun rezultat”; tastarea rapidă nu generează mai mult de o cerere API per termen (debounce 400 ms + cache).
+
+Dependente: US11, US13
+Cerinte: FR9
+","High","5","MoSCoW-Should","14"
+"Story","US15 - Înregistrare cont","Ca vizitator, vreau să îmi creez un cont cu email și parolă, pentru a-mi salva preferințele.
+
+Criterii de acceptare:
+AC1. Emailul trebuie să aibă format valid și să nu fie deja folosit.
+AC2. Parola are minim 8 caractere și cel puțin o cifră.
+AC3. Parola este stocată doar ca hash (bcrypt).
+AC4. După înregistrare, utilizatorul este autentificat automat.
+
+Dependente: —
+Cerinte: FR10
+","High","3","MoSCoW-Should","15"
+"Story","US16 - Autentificare și delogare","Ca utilizator înregistrat, vreau să mă autentific și să mă deloghez, pentru a-mi accesa favoritele de pe orice dispozitiv.
+
+Criterii de acceptare:
+AC1. Autentificare cu email și parolă; la credențiale greșite se afișează un mesaj generic.
+AC2. Sesiunea (JWT) expiră după 7 zile.
+AC3. După delogare, paginile care necesită cont nu mai sunt accesibile.
+AC4. După 5 încercări eșuate consecutive, contul este blocat temporar 5 minute.
+
+Dependente: US15
+Cerinte: FR10
+","High","3","MoSCoW-Should","16"
+"Story","US17 - Echipe și competiții favorite","Ca utilizator înregistrat, vreau să marchez echipe și competiții ca favorite, pentru a le urmări mai ușor.
+
+Criterii de acceptare:
+AC1. Butonul „stea” apare pe pagina echipei, a competiției și în lista de meciuri.
+AC2. Favoritele sunt salvate în cont și rămân după delogare/relogare.
+AC3. Există o listă de favorite din care se pot elimina elemente.
+AC4. Un vizitator neautentificat care apasă „stea” este invitat să se autentifice.
+
+Dependente: US16, US11
+Cerinte: FR11
+","High","3","MoSCoW-Should","17"
+"Story","US18 - Tab-ul „Meciurile mele”","Ca utilizator înregistrat, vreau un tab „Meciurile mele” cu meciurile echipelor și competițiilor favorite, pentru a nu căuta prin toate meciurile.
+
+Criterii de acceptare:
+AC1. Tab-ul afișează meciurile din ziua selectată care implică favoritele, din toate sporturile.
+AC2. Meciurile sunt ordonate cronologic.
+AC3. Dacă nu există favorite, se afișează un mesaj cu link către adăugarea lor.
+
+Dependente: US17
+Cerinte: FR11
+","High","3","MoSCoW-Should","18"
+"Story","US23 - Meciuri recomandate – Interest Score (inovare)","Ca vizitator, vreau ca aplicația să evidențieze „meciurile zilei” pe baza unui scor de interes, pentru a descoperi rapid cele mai importante meciuri.
+
+Criterii de acceptare:
+AC1. Fiecare meci programat primește un scor 0–100 calculat de o funcție documentată și acoperită de teste unitare.
+AC2. Secțiunea „Recomandate azi” afișează primele 5 meciuri după scor.
+AC3. Pentru utilizatorul autentificat, meciurile cu echipe favorite primesc un bonus de scor.
+AC4. Un tooltip explică motivul recomandării (ex. „Derby, locurile 1 vs 2”).
+
+Dependente: US02, US10
+Cerinte: FR17
+Note: Element de inovare al proiectului. Scorul 0–100 combină: diferența de poziții în clasament, importanța competiției, derby/istoric direct, prezența echipelor favorite și (pentru fotbal) predicțiile din API. Candidat bun pentru TDD (funcție pură, ușor de testat unitar).","High","8","MoSCoW-Should","19"
+"Story","US24 - Export meci în calendar (.ics) (inovare)","Ca vizitator, vreau să adaug un meci în calendarul meu (Google / Outlook) printr-un fișier .ics, pentru a nu uita de el.
+
+Criterii de acceptare:
+AC1. Butonul „Adaugă în calendar” apare la meciurile programate.
+AC2. Fișierul .ics este valid (RFC 5545) și conține titlul „Echipa A vs Echipa B”, ora de start, o durată estimată per sport și competiția în descriere.
+AC3. Fișierul se importă corect în Google Calendar și Outlook.
+
+Dependente: US06
+Cerinte: FR18
+","High","3","MoSCoW-Should","20"
+"Story","US08 - Statisticile meciului","Ca vizitator, vreau să văd statisticile comparative ale meciului (posesie, șuturi, cornere), pentru a evalua cum a jucat fiecare echipă.
+
+Criterii de acceptare:
+AC1. Fiecare statistică este afișată ca bară comparativă gazde / oaspeți.
+AC2. Valorile corespund răspunsului API pentru meciul respectiv.
+AC3. Pentru meciurile neîncepute se afișează „Statistici indisponibile”.
+
+Dependente: US06
+Cerinte: FR5
+","Medium","3","MoSCoW-Could","21"
+"Story","US21 - Istoric direct (head-to-head)","Ca vizitator, vreau să văd istoricul meciurilor directe dintre cele două echipe, pentru a avea context înaintea meciului.
+
+Criterii de acceptare:
+AC1. Se afișează ultimele 10 întâlniri directe cu dată, competiție și scor.
+AC2. Se afișează un sumar V/E/Î pentru fiecare echipă.
+AC3. Informația este un tab în pagina meciului.
+
+Dependente: US06
+Cerinte: FR13
+","Medium","3","MoSCoW-Could","22"
+"Story","US09 - Formațiile de start","Ca vizitator, vreau să văd formațiile de start și rezervele, pentru a ști ce jucători sunt pe teren.
+
+Criterii de acceptare:
+AC1. Se afișează sistemul de joc (ex. 4-3-3), titularii cu număr și poziție, rezervele și antrenorul.
+AC2. Click pe un jucător deschide profilul acestuia.
+AC3. Dacă API-ul nu a publicat încă formațiile, se afișează „Formațiile nu sunt disponibile încă”.
+
+Dependente: US06, US13
+Cerinte: FR5
+","Medium","5","MoSCoW-Could","23"
+"Story","US19 - Notificări pentru meciurile favorite","Ca utilizator înregistrat, vreau să primesc notificări în browser la începutul meciului, la gol și la final pentru echipele favorite, pentru a fi la curent fără să stau în aplicație.
+
+Criterii de acceptare:
+AC1. Utilizatorul poate activa/dezactiva fiecare tip de notificare (start, gol, final).
+AC2. Aplicația cere permisiunea browserului înainte de prima notificare.
+AC3. Notificarea apare în maxim 2 minute de la eveniment.
+AC4. Click pe notificare deschide pagina meciului.
+
+Dependente: US17, US04
+Cerinte: FR12
+","Medium","8","MoSCoW-Could","24"
+"Story","US25 - Administrare sporturi și competiții afișate","Ca administrator, vreau să configurez sporturile și competițiile populare afișate implicit, pentru a controla conținutul și consumul de cereri API.
+
+Criterii de acceptare:
+AC1. Pagina de administrare este accesibilă doar utilizatorilor cu rol ADMIN.
+AC2. Administratorul poate activa/dezactiva un sport.
+AC3. Administratorul poate marca competiții ca „populare” (afișate primele).
+AC4. Modificările sunt vizibile în aplicație fără redeploy.
+
+Dependente: US16, US20
+Cerinte: FR15
+","Medium","5","MoSCoW-Could","25"
+"Story","US26 - Monitorizarea consumului API","Ca administrator, vreau să văd consumul zilnic de cereri API per sport, pentru a preveni depășirea limitei planului.
+
+Criterii de acceptare:
+AC1. Pagina afișează cererile folosite / rămase per sport, pentru azi și ultimele 7 zile.
+AC2. La depășirea a 80% din limita zilnică apare un avertisment.
+AC3. Datele provin din contorul intern (US20) și sunt comparate cu endpoint-ul /status al API-ului.
+
+Dependente: US20, US25
+Cerinte: FR15
+","Medium","3","MoSCoW-Could","26"
+"Story","US27 - Temă întunecată / luminoasă","Ca vizitator, vreau să comut între tema întunecată și cea luminoasă, pentru a folosi aplicația confortabil seara.
+
+Criterii de acceptare:
+AC1. Un comutator în antet schimbă tema imediat.
+AC2. Tema aleasă este reținută în browser.
+
+Dependente: —
+Cerinte: NFR-05
+Note: Nu este planificată în această versiune; păstrată în backlog pentru o versiune ulterioară.","Low","2","MoSCoW-Wont","27"

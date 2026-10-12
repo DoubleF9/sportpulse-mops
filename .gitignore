@@ -1,0 +1,8 @@
+node_modules/
+.env
+*.env
+__pycache__/
+~$*.docx
+
+# materiale de curs (nu se publica)
+Proiect de laborator MOPS.pdf
