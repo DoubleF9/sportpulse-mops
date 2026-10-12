@@ -6,7 +6,7 @@ SportPulse este o aplicație web de tip livescore (în stilul Flashscore) pentru
 
 | Cerință din enunț | Unde se găsește |
 |---|---|
-| Constituirea echipei, alegerea temei | `docs/SportPulse_Etapa1_Requirements_Backlog.docx` – secțiunile 1–2 |
+| Constituirea echipei, alegerea temei | [docs/SportPulse_Etapa1_Requirements_Backlog.md](docs/SportPulse_Etapa1_Requirements_Backlog.md) – secțiunile 1–2 |
 | Requirements Document (problemă, utilizatori, FR, NFR) | secțiunile 3, 4, 6, 7, 8 |
 | Product Goal | secțiunea 5 |
 | Use Case Diagram | secțiunea 9 + `docs/diagrams/use_case_diagram.png` / `.puml` |
@@ -31,8 +31,7 @@ SportPulse este o aplicație web de tip livescore (în stilul Flashscore) pentru
 ```bash
 pip install matplotlib
 python tools/use_case_diagram.py      # -> docs/diagrams/use_case_diagram.png
-npm install docx
-node tools/build_docs.js              # -> docs/*.docx + docs/product_backlog_jira.csv
+node tools/build_docs.js              # -> docs/*.md + docs/product_backlog_jira.csv
 ```
 
-Backlog-ul are o singură sursă, `tools/backlog.js`. Modificați poveștile acolo, nu direct în .docx, ca documentul și CSV-ul să rămână sincronizate.
+Backlog-ul are o singură sursă, `tools/backlog.js`. Modificați poveștile acolo, nu direct în .md, ca documentul și CSV-ul să rămână sincronizate.
