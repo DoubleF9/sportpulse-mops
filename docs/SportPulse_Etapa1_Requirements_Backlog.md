@@ -3,7 +3,7 @@
 **Proiect de laborator MOPS – Etapa I (Săptămânile 3–4)**  
 Aplicație web pentru urmărirea meciurilor din mai multe sporturi  
 Echipa: [Numele echipei] · Grupa: [ ] · Cadru didactic: [ ]  
-Versiunea 1.0 (draft pentru validare în echipă) – 12.10.2026
+Versiunea 1.0 – 12.10.2026
 
 ## Cuprins
 
@@ -25,7 +25,7 @@ Versiunea 1.0 (draft pentru validare în echipă) – 12.10.2026
 
 ## 1. Constituirea echipei
 
-Echipa este formată din 4–5 studenți. Rolurile Scrum sunt alocate astfel (de completat cu numele membrilor):
+Echipa este formată din 5 studenți. Rolurile Scrum sunt alocate astfel (de completat cu numele membrilor):
 
 | Membru | Rol Scrum | Responsabilități principale |
 |---|---|---|
@@ -33,30 +33,28 @@ Echipa este formată din 4–5 studenți. Rolurile Scrum sunt alocate astfel (de
 | [Nume Prenume 2] | Developer + Scrum Master | Facilitează evenimentele Scrum și Retrospective; elimină impedimentele; realizează diagrama de workflow. |
 | [Nume Prenume 3] | Developer | Implementare backend (integrare API-Sports, cache), teste unitare. |
 | [Nume Prenume 4] | Developer | Implementare frontend (liste meciuri, pagini detalii), teste. |
-| [Nume Prenume 5] (opțional) | Developer | Autentificare, favorite, notificări, teste de acceptare. |
+| [Nume Prenume 5] Developer | Developer | Autentificare, favorite, notificări, teste de acceptare. |
 
 **Instrumente de lucru:** Slack (comunicare, canal #sportpulse), GitHub (repository, branch-uri, Pull Requests), Jira sau GitHub Projects (backlog și board de Sprint), API-Sports (sursa de date).
 
 ## 2. Tema proiectului
 
-**SportPulse** este o aplicație web de tip „livescore” (similară ca idee cu Flashscore) care afișează programul, rezultatele și scorurile live ale meciurilor din mai multe sporturi, împreună cu clasamente, pagini de echipe și profiluri de jucători. Datele provin din API-urile publice **API-Sports** (dashboard.api-football.com), accesate cu o cheie personală.
-
+**SportPulse** este o platformă web dedicată pasionaților de sport (similară conceptual cu Flashscore), care centralizează programul, rezultatele și scorurile detaliate pentru o gamă largă de sporturi. Pe lângă meciuri, aplicația oferă clasamente actualizate, pagini dedicate echipelor și profiluri complete de jucători. Datele sunt preluate prin intermediul cheii personale din suita de API-uri publice oferite de API-Sports (dashboard.api-football.com), acoperind atât evenimentele programate și cele în desfășurare, cât și istoricul rezultatelor trecute.
 Elementele de inovare propuse față de aplicațiile existente:
 
-- **Interest Score** – un scor calculat de aplicație (0–100) care recomandă „meciurile zilei” pe baza clasamentului, importanței competiției, istoricului direct și preferințelor utilizatorului, cu o explicație vizibilă a recomandării (US23).
-- **Export în calendar (.ics)** – utilizatorul își adaugă meciurile dorite în Google Calendar / Outlook cu un click (US24).
-- **Funcționare robustă pe un plan gratuit limitat** – cache inteligent cu TTL diferențiat pe tipul de date, astfel încât aplicația rămâne utilizabilă și la limita de cereri a API-ului (US20).
+- **Interest Score** – un scor calculat de aplicație (0–100) care recomandă „meciurile in vogă” pe baza unor factori cum ar fi clasamentul, importanța competiției, istoricul și preferințele utilizatorului, cu o explicație vizibilă a recomandării.
+- **Export în calendar (.ics)** – utilizatorul își adaugă meciurile dorite în Google Calendar cu un click.
+- **Funcționare robustă pe un plan gratuit limitat** – cache inteligent cu TTL diferențiat pe tipul de date, astfel încât aplicația rămâne utilizabilă și la limita de cereri a API-ului.
 
 ## 3. Descrierea problemei
 
-Fanii sportului urmăresc de obicei mai multe competiții și chiar mai multe sporturi. Informația este însă împrăștiată: un site pentru scoruri live, altul pentru clasamente, altul pentru statistici de jucători. Aplicațiile mari existente sunt aglomerate cu reclame și pariuri, iar găsirea meciurilor relevante pentru un anumit utilizator cere mult timp.
+Fanii sportului urmăresc de obicei mai multe competiții și chiar mai multe sporturi. Informația este, de cele mai multe ori, împrăștiată: un site pentru scoruri si clasamente, altul pentru statistici referitoare la joc, altul pentru anuntul meciurilor. Aplicațiile mari existente sunt aglomerate cu reclame și pariuri, iar găsirea meciurilor relevante pentru un anumit utilizator cere mult timp.
 
 Probleme concrete identificate:
 
-- Nu există un loc unic, simplu și rapid în care să vezi programul zilei pentru mai multe sporturi, în fusul tău orar.
-- Utilizatorul trebuie să caute manual meciurile echipelor preferate printre sute de meciuri.
-- Este greu de decis care meciuri merită urmărite într-o zi încărcată.
-- Informațiile despre jucători și echipe (lot, statistici, formă) nu sunt legate direct de meciul urmărit.
+- Fragmentarea și aglomerația platformelor existente: Utilizatorii care urmăresc mai multe sporturi sunt nevoiți să navigheze prin interfețe incărcate de reclame, pagini multiple sau aplicații separate pentru fiecare sport în parte, lipsind o experiență unificată, rapidă și curată a programului zilnic în fusul orar local.
+- Oboseala de căutare în listele extinse: Utilizatorii sunt nevoiți să parcurgă manual sute de evenimente zilnice pentru a găsi meciurile echipelor sau competițiilor preferate, consumând timp prețios.
+- Lipsa unei prioritizări inteligente: În zilele cu o agendă încărcată de meciuri, este dificil de identificat rapid care sunt partidele cu adevărat relevante sau „în vogă” pe baza contextului (importanța mizei, rivalități, formă).
 
 SportPulse rezolvă aceste probleme printr-o interfață curată, centrată pe meci, cu favorite, recomandări și export în calendar.
 
@@ -64,17 +62,17 @@ SportPulse rezolvă aceste probleme printr-o interfață curată, centrată pe m
 
 | Categorie | Descriere | Nevoi principale |
 |---|---|---|
-| Vizitator (fan ocazional) | Accesează aplicația fără cont, de pe telefon sau calculator, pentru a verifica rapid un rezultat. | Program și scoruri live, detalii meci, clasamente, căutare rapidă. |
-| Utilizator înregistrat (fan dedicat) | Urmărește constant anumite echipe și competiții, din unul sau mai multe sporturi. | Favorite, feed „Meciurile mele”, notificări, recomandări personalizate, export în calendar. |
-| Fan interesat de statistici | Vizitator sau utilizator înregistrat care analizează forma echipelor și a jucătorilor. | Statistici meci, profil jucător, istoric direct, clasament cu formă. |
+| Vizitator (fan ocazional) | Accesează aplicația fără cont, de pe calculator, pentru a verifica rapid un rezultat. | Program și scoruri live, detalii meci, clasamente, căutare rapidă. |
+| Utilizator înregistrat (fan dedicat) | Urmărește constant anumite competiții, din unul sau mai multe sporturi. | Favorite, recomandări personalizate, export în calendar. |
+| Fan interesat de statistici | Vizitator sau utilizator înregistrat care analizează performanta jucătorilor. | Statistici meci, profil jucător, clasament. |
 | Administrator | Membru al echipei care administrează aplicația. | Configurarea sporturilor/competițiilor afișate, monitorizarea consumului de cereri API. |
-| Sisteme externe (actori secundari) | API-Sports (furnizor de date) și planificatorul intern care declanșează sincronizarea. | Cereri autentificate cu cheie API, respectarea limitelor de cereri. |
+
 
 ## 5. Product Goal
 
-> **Product Goal:** SportPulse le oferă fanilor de sport un singur loc, rapid și personalizat, în care pot urmări programul, scorurile live, clasamentele, echipele și jucătorii pentru fotbal, baschet și hochei, și pot descoperi ușor meciurile care contează pentru ei.
+> **Product Goal:** SportPulse le oferă fanilor de sport un singur loc, rapid și personalizat, în care pot urmări programul, scorurile live, clasamentele, echipele și jucătorii pentru fotbal, baschet și alte sporturi, și pot descoperi ușor meciurile care contează pentru ei.
 
-Product Goal este măsurabil prin: (1) utilizatorul ajunge la scorul unui meci în maxim 2 click-uri; (2) datele live au o întârziere de maxim 60 s; (3) un utilizator înregistrat își vede toate meciurile favorite din toate sporturile pe un singur ecran.
+Product Goal este măsurabil prin: (1) utilizatorul ajunge la programul, rezultatele sau statisticile oricărui meci din orice sport în maxim 4 click-uri de pe pagina principală; (2) un utilizator înregistrat își poate vizualiza toate meciurile favorite din multiple discipline sportive pe o singura pagina; (3) utilizatorul poate identifica principalele meciuri în vogă în sub 30 secunde de la accesarea aplicației, ghidat de criteriile de interes; (4) timpul de încărcare a oricărei pagini de detaliu (loturi, clasamente, profil de jucător) este de sub 1,5 secunde în condiții standard de rețea; (5) platforma oferă o acoperire completă a programului și rezultatelor pentru cel puțin 5 discipline sportive principale; (6) fluxul de autentificare și personalizare a listei de echipe favorite durează sub 30 de secunde pentru un utilizator nou; (7) interfața web se adaptează fluid și fără pierderi de funcționalitate, menținând un design curat și fără reclame; (8) sincronizarea automată a bazei de date cu furnizorul extern se realizează în fundal fără a bloca sau a încetini interacțiunea utilizatorului cu aplicația; (9) toate orele și datele programate sunt convertite și afișate corect în fusul orar local al utilizatorului fără erori de offset.
 
 ## 6. Cerințe funcționale
 
