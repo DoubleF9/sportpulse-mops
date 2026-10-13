@@ -72,7 +72,7 @@ SportPulse rezolvă aceste probleme printr-o interfață curată, centrată pe m
 
 > **Product Goal:** SportPulse le oferă fanilor de sport un singur loc, rapid și personalizat, în care pot urmări programul, scorurile live, clasamentele, echipele și jucătorii pentru fotbal, baschet și alte sporturi, și pot descoperi ușor meciurile care contează pentru ei.
 
-Product Goal este măsurabil prin: (1) utilizatorul ajunge la programul, rezultatele sau statisticile oricărui meci din orice sport în maxim 4 click-uri de pe pagina principală; (2) un utilizator înregistrat își poate vizualiza toate meciurile favorite din multiple discipline sportive pe o singura pagina; (3) utilizatorul poate identifica principalele meciuri în vogă în sub 30 secunde de la accesarea aplicației, ghidat de criteriile de interes; (4) timpul de încărcare a oricărei pagini de detaliu (loturi, clasamente, profil de jucător) este de sub 1,5 secunde în condiții standard de rețea; (5) platforma oferă o acoperire completă a programului și rezultatelor pentru cel puțin 5 discipline sportive principale; (6) fluxul de autentificare și personalizare a listei de echipe favorite durează sub 30 de secunde pentru un utilizator nou; (7) interfața web se adaptează fluid și fără pierderi de funcționalitate, menținând un design curat și fără reclame; (8) sincronizarea automată a bazei de date cu furnizorul extern se realizează în fundal fără a bloca sau a încetini interacțiunea utilizatorului cu aplicația; (9) toate orele și datele programate sunt convertite și afișate corect în fusul orar local al utilizatorului fără erori de offset.
+Product Goal este măsurabil prin: (1) utilizatorul ajunge la programul, rezultatele sau statisticile oricărui meci din orice sport în maxim 4 click-uri de pe pagina principală; (2) un utilizator înregistrat își poate vizualiza toate meciurile favorite din multiple discipline sportive pe o singura pagina; (3) utilizatorul poate identifica principalele meciuri în vogă în sub 30 secunde de la accesarea aplicației, ghidat de criteriile de interes; (4) timpul de încărcare a oricărei pagini de detaliu (loturi, clasamente, profil de jucător) este de sub 1,5 secunde în condiții standard de rețea; (5) platforma oferă o acoperire completă a programului și rezultatelor pentru cel puțin 5 discipline sportive principale; (6) fluxul de autentificare și personalizare a listei de echipe favorite durează sub 30 de secunde pentru un utilizator nou; (7) interfața web se adaptează fluid și fără pierderi de funcționalitate, menținând un design curat și fără reclame; (8) sincronizarea automată a bazei de date cu furnizorul extern se realizează în fundal fără a bloca sau a încetini interacțiunea utilizatorului cu aplicația; (9) toate orele și datele programate sunt convertite și afișate corect în fusul orar local al utilizatorului fără erori de offset. (TBD)
 
 ## 6. Cerințe funcționale
 
@@ -81,23 +81,22 @@ Prioritatea indicată este cea inițială (MoSCoW) și este detaliată în Produ
 | ID | Cerință funcțională | Prioritate |
 |---|---|---|
 | FR1 | Afișarea sporturilor disponibile (minim fotbal, baschet, hochei) și selectarea unuia dintre ele. | Must |
-| FR2 | Afișarea programului de meciuri pe zile (ieri / azi / mâine, interval ±7 zile), grupat pe competiții. | Must |
-| FR3 | Afișarea meciurilor în desfășurare cu scor și minut actualizate automat. | Must |
-| FR4 | Filtrarea meciurilor după țară și competiție. | Should |
-| FR5 | Pagina de detalii a meciului: informații de bază, cronologia evenimentelor, statistici, formații. | Must (bază) / Should–Could (restul) |
+| FR2 | Afișarea programului de meciuri pe zile (ieri / azi / mâine, interval ±7 zile). | Must |
+| FR3 | Afișarea meciurilor. | Must |
+| FR4 | Filtrarea evenimentelor după țară. | Must |
+| FR5 | Pagina de detalii a meciului: informații de bază, statistici, scor, jucatori (TBD). | Must  |
 | FR6 | Afișarea clasamentului unei competiții. | Must |
-| FR7 | Pagina echipei: informații generale, rezultate recente, meciuri viitoare, lot de jucători. | Should |
-| FR8 | Profilul jucătorului cu date personale și statistici pe sezon. | Should |
+| FR7 | Pagina echipei: informații generale, rezultate, meciuri, lot de jucători (TBD). | Should |
+| FR8 | Profilul jucătorului cu date personale și statistici pe sezon (TBD). | Should |
 | FR9 | Căutare după nume pentru echipe, jucători și competiții. | Should |
-| FR10 | Crearea unui cont, autentificare și delogare. | Should |
-| FR11 | Gestionarea echipelor/competițiilor favorite și afișarea feed-ului „Meciurile mele”. | Should |
+| FR10 | Crearea unui cont, autentificare și delogare. | Must |
+| FR11 | Afișarea feed-ului „Favorite”. (TBD) | Must |
 | FR12 | Notificări în browser pentru evenimentele meciurilor favorite (start, gol, final). | Could |
-| FR13 | Afișarea istoricului întâlnirilor directe (head-to-head). | Could |
-| FR14 | Afișarea tuturor orelor în fusul orar al utilizatorului. | Must |
+| FR13 | Afișarea tuturor orelor în fusul orar al utilizatorului. | Must |
 | FR15 | Administrare: configurarea sporturilor/competițiilor afișate și monitorizarea consumului API. | Could |
 | FR16 | Sincronizarea periodică a datelor din API-Sports și păstrarea lor într-un cache pe server. | Must |
-| FR17 | Calcularea unui „Interest Score” pentru meciuri și afișarea meciurilor recomandate (inovare). | Should |
-| FR18 | Exportul unui meci (sau al meciurilor favorite) în calendar, în format .ics (inovare). | Should |
+| FR17 | Calcularea unui „Interest Score” pentru meciuri și afișarea meciurilor recomandate (inovare). (TBD) | Should |
+| FR18 | Exportul unui meci (sau al meciurilor favorite) în calendar, în format .ics (inovare). (TBD) | Must |
 
 ## 7. Cerințe nefuncționale
 
