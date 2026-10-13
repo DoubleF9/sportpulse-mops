@@ -102,16 +102,16 @@ Prioritatea indicată este cea inițială (MoSCoW) și este detaliată în Produ
 
 | ID | Categorie | Cerință |
 |---|---|---|
-| NFR-01 | Performanță | Paginile principale se încarcă în sub 2 s (p95) când datele sunt în cache; răspunsul backend-ului din cache durează sub 500 ms. |
+| NFR-01 | Performanță | Paginile principale se încarcă în sub 2 s când datele sunt în cache; răspunsul backend-ului din cache durează sub 500 ms. |
 | NFR-02 | Limitele API | Aplicația respectă limita planului gratuit API-Sports (100 cereri/zi pentru fiecare sport) prin cache cu TTL și contorizarea cererilor. |
 | NFR-03 | Prospețimea datelor | Scorurile live sunt actualizate la cel mult 60 s; programul zilnic la cel mult 1 h; clasamentele la cel mult 6 h. |
 | NFR-04 | Securitate | Cheia API este păstrată doar pe server (variabilă de mediu, niciodată în repository). Parole stocate cu bcrypt, autentificare cu JWT, comunicare prin HTTPS. |
-| NFR-05 | Utilizabilitate | Interfață responsive (de la 360 px lățime până la desktop), contrast conform WCAG 2.1 AA, maxim 2 click-uri de la pagina principală la detaliile unui meci. |
+| NFR-05 | Utilizabilitate | Interfață responsive (de la 360 px lățime până la desktop), contrast conform WCAG 2.1 AA, maxim 2 click-uri de la pagina principală la detaliile unui meci. (TBD) |
 | NFR-06 | Robustețe | La eroarea sau indisponibilitatea API-ului, aplicația afișează ultimele date salvate cu indicatorul de vechime, fără erori vizibile utilizatorului. |
-| NFR-07 | Mentenabilitate | Arhitectură pe straturi, cu câte un adaptor per sport; code coverage de minim 70% pe logica de business a backend-ului. |
+| NFR-07 | Mentenabilitate | Arhitectură pe straturi, cu câte un adaptor (TBD) per sport; code coverage de minim 70% pe logica de business a backend-ului. |
 | NFR-08 | Localizare | Interfață în limba română; formatele de dată/oră respectă setările locale ale utilizatorului. |
 | NFR-09 | Protecția datelor | Se colectează doar emailul și preferințele; utilizatorul își poate șterge contul și toate datele asociate (GDPR). |
-| NFR-10 | Compatibilitate | Funcționează în ultimele 2 versiuni de Chrome, Firefox și Edge. |
+| NFR-10 | Compatibilitate | Funcționează în ultima versiune de Chrome, Firefox și Edge. |
 
 ## 8. Sursa de date, constrângeri și riscuri
 
@@ -136,7 +136,7 @@ Fiecare sport are un API separat, cu aceeași cheie (header-ul `x-apisports-key`
 
 | Risc | Impact | Măsură de reducere |
 |---|---|---|
-| Depășirea limitei zilnice de cereri API | Ridicat | US20 este primul în backlog: cache cu TTL, contor de cereri, date de rezervă. |
+| Depășirea limitei zilnice de cereri API | Ridicat | User Story-ul pentru „Încărcare rapidă a datelor (cache server-side)” este primul în backlog: include cache cu TTL, contor de cereri și date de rezervă. |
 | Sezonul curent nu este disponibil pe planul gratuit | Mediu | Verificare în prima săptămână; folosirea unui sezon disponibil pentru demo. |
 | Structuri de date diferite între sporturi | Mediu | Model intern comun + câte un adaptor per sport; începem cu fotbalul. |
 | Cheia API publicată accidental în repository | Ridicat | Fișier .env în .gitignore, cheia doar pe server, verificare în code review. |
@@ -150,7 +150,7 @@ Diagrama prezintă actorii sistemului și cazurile de utilizare identificate. Ut
 
 *Figura 1 – Use Case Diagram SportPulse*
 
-### 9.1 Cazurile de utilizare și legătura cu cerințele
+### 9.1 Cazurile de utilizare și legătura cu cerințele (TBD)
 
 | UC | Caz de utilizare | Actor principal | Cerințe | User Stories |
 |---|---|---|---|---|
@@ -177,7 +177,38 @@ Diagrama prezintă actorii sistemului și cazurile de utilizare identificate. Ut
 
 ## 10. User Stories inițiale și refinement
 
-Pornind de la cerințe și de la Use Case Diagram, echipa a identificat un set inițial de User Stories, care a fost rafinat folosind principiile INVEST. Rezultatul este un set de **27 User Stories** (cerința minimă este 15), prezentate în secțiunea 11.
+Pornind de la cerințe și de la Use Case Diagram, am identificat un set inițial de User Stories, care a fost rafinat folosind principiile INVEST. Rezultatul este un set de **27 User Stories** , prezentate în secțiunea 11.
+#### Lista inițială de User Stories
+
+| ID | User Story |
+|---|---|
+| US01 | Selectarea sportului |
+| US02 | Programul meciurilor din ziua curentă |
+| US03 | Navigarea între zile |
+| US04 | Scoruri live actualizate automat |
+| US05 | Filtrare după țară și competiție |
+| US06 | Pagina meciului – informații de bază |
+| US07 | Cronologia evenimentelor din meci |
+| US08 | Statisticile meciului |
+| US09 | Formațiile de start |
+| US10 | Clasamentul competiției |
+| US11 | Pagina echipei |
+| US12 | Lotul echipei |
+| US13 | Profilul jucătorului |
+| US14 | Căutare echipe, jucători și competiții |
+| US15 | Înregistrare cont |
+| US16 | Autentificare și delogare |
+| US17 | Echipe și competiții favorite |
+| US18 | Tab-ul „Meciurile mele” |
+| US19 | Notificări pentru meciurile favorite |
+| US20 | Încărcare rapidă a datelor (cache server-side) |
+| US21 | Istoric direct al confruntărilor (head-to-head) |
+| US22 | Ore afișate în fusul orar local |
+| US23 | Meciuri recomandate – Interest Score |
+| US24 | Export meci în calendar (.ics) |
+| US25 | Administrare sporturi și competiții afișate |
+| US26 | Monitorizarea consumului API |
+| US27 | Temă întunecată / luminoasă |
 
 ### 10.1 Cum au fost aplicate principiile INVEST
 
