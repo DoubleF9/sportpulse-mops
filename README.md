@@ -15,7 +15,7 @@ SportPulse este o aplicație web de tip livescore (în stilul Flashscore) pentru
 | Prioritizare (MoSCoW) și estimare (Planning Poker) | secțiunile 12–13 |
 | Jurnal utilizare AI | secțiunea 15 |
 
-## Ce mai are de făcut echipa (nu poate fi făcut de AI)
+## Ce mai are de făcut echipa
 
 - [ ] Completați numele membrilor, rolurile, grupa și numele echipei (coperta + secțiunea 1).
 - [ ] Faceți ședința de **refinement**: citiți poveștile împreună și eliminați, adăugați sau reformulați ce nu vă convine.
