@@ -330,9 +330,9 @@ add(
   "## 14. Arhitectură și tehnologii propuse",
   "Propunere inițială, de confirmat de echipă înainte de Sprint Planning:",
   table(["Componentă", "Tehnologie propusă", "Motiv"], [
-    ["Frontend", "React + TypeScript (Vite)", "Componente reutilizabile pentru liste de meciuri și pagini de detalii; testare cu Vitest."],
-    ["Backend", "Java 21 + Spring Boot 3 (REST)", "Ascunde cheia API, face cache și agregare; teste cu JUnit 5 + Mockito."],
-    ["Bază de date", "PostgreSQL", "Utilizatori, favorite, configurare, cache persistent, contor cereri API."],
+    ["Frontend", "Angular 21 + TypeScript", "Componente reutilizabile pentru liste de meciuri și pagini de detalii; testare cu Vitest."],
+    ["Backend", "Java 21 + Spring Boot 4 (REST)", "Ascunde cheia API, face cache și agregare; teste cu JUnit 5 + Mockito."],
+    ["Bază de date", "MongoDB (Atlas)", "Utilizatori, favorite, configurare, cache persistent cu expirare automată, contor cereri API."],
     ["Code coverage", "JaCoCo (backend), Vitest coverage (frontend)", "Cerința de măsurare a code coverage."],
     ["Versionare și CI", "Git + GitHub, GitHub Actions", "Branch-uri, Pull Requests, rulare automată a testelor."],
     ["Management", "Jira sau GitHub Projects", "Backlog, board de Sprint (To Do → In Progress → Code Review → Testing → Done)."],
