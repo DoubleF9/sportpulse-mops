@@ -1,0 +1,92 @@
+<section class="standings-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}</p>
+      <h1>Clasamente</h1>
+      <p class="page-subtitle">Clasamentul competițiilor pentru sportul selectat.</p>
+    </div>
+    <div class="backend-indicator" [class.backend-up]="backendStatus() === 'UP'">
+      <span class="backend-dot"></span>
+      Backend {{ backendStatus() }}
+    </div>
+  </div>
+
+  <div class="demo-notice">
+    <span class="demo-icon" aria-hidden="true">i</span>
+    <span><strong>Previzualizare</strong> — clasamentele de mai jos sunt date demonstrative, nu sunt preluate din API.</span>
+  </div>
+
+  @for (competition of standingsData(); track competition.name) {
+    <section class="standings-section" aria-labelledby="league-{{ $index }}">
+      <div class="standings-heading">
+        <div class="league-identity">
+          <div class="league-mark" aria-hidden="true">✦</div>
+          <div>
+            <h2 id="league-{{ $index }}">{{ competition.name }}</h2>
+            <p>{{ competition.country }} <span class="meta-separator">·</span> {{ competition.group ? competition.group : 'Clasament general' }}</p>
+          </div>
+        </div>
+        <span class="demo-tag">DEMO</span>
+      </div>
+
+      <div class="standings-table-wrapper">
+        <table class="standings-table" aria-label="Clasamentul {{ competition.name }}">
+          <thead>
+            <tr>
+              <th scope="col" class="col-pos">#</th>
+              <th scope="col" class="col-team">Echipă</th>
+              <th scope="col">MJ</th>
+              <th scope="col">V</th>
+              <th scope="col">E</th>
+              <th scope="col">Î</th>
+              <th scope="col">GM</th>
+              <th scope="col">GP</th>
+              <th scope="col">DG</th>
+              <th scope="col" class="col-points">PCT</th>
+              <th scope="col" class="col-form">Formă</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of competition.rows; track row.team; let i = $index) {
+              <tr class="standings-row" [class.zone-champions]="row.zone === 'champions'" [class.zone-europa]="row.zone === 'europa'" [class.zone-relegation]="row.zone === 'relegation'">
+                <td class="col-pos">{{ row.position }}</td>
+                <td class="col-team">
+                  <div class="team-cell">
+                    <span class="team-mark">{{ row.mark }}</span>
+                    <span class="team-name">{{ row.team }}</span>
+                  </div>
+                </td>
+                <td>{{ row.played }}</td>
+                <td>{{ row.won }}</td>
+                <td>{{ row.drawn }}</td>
+                <td>{{ row.lost }}</td>
+                <td>{{ row.goalsFor }}</td>
+                <td>{{ row.goalsAgainst }}</td>
+                <td>{{ row.goalDiff >= 0 ? '+' + row.goalDiff : row.goalDiff }}</td>
+                <td class="col-points">{{ row.points }}</td>
+                <td class="col-form">
+                  <div class="form-dots">
+                    @for (res of row.form; track $index) {
+                      <span class="form-dot" [class.form-w]="res === 'W'" [class.form-d]="res === 'D'" [class.form-l]="res === 'L'" [attr.aria-label]="res === 'W' ? 'Victorie' : res === 'D' ? 'Egal' : 'Înfrângere'"></span>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="standings-legend">
+        <span class="legend-item"><span class="legend-dot zone-champions-dot"></span> Calificare</span>
+        <span class="legend-item"><span class="legend-dot zone-europa-dot"></span> Europa</span>
+        <span class="legend-item"><span class="legend-dot zone-relegation-dot"></span> Retrogradare</span>
+      </div>
+    </section>
+  }
+
+  <footer class="standings-footer">
+    <span class="footer-live-dot"></span>
+    Design demonstrativ <span class="meta-separator">·</span> Coloanele: MJ = meciuri jucate, V = victorii, E = egaluri, Î = înfrângeri, GM/GP = goluri marcate/primite, DG = golaveraj, PCT = puncte
+  </footer>
+</section>
