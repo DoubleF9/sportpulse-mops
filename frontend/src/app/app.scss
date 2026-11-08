@@ -1,5 +1,11 @@
 main {
-  max-width: 960px;
+  width: min(1120px, 100%);
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.25rem 4rem;
+}
+
+@media (max-width: 600px) {
+  main {
+    padding: 1.25rem 0.9rem 3rem;
+  }
 }

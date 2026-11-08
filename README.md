@@ -2,6 +2,9 @@
 
 SportPulse este o aplicație web de tip livescore (în stilul Flashscore) pentru fotbal, baschet și hochei, cu date din [API-Sports](https://dashboard.api-football.com/). Arată programul, scorurile live, clasamentele, echipele și jucătorii, plus favorite, recomandări („Interest Score”) și export în calendar.
 
+Sportul poate fi selectat din meniul de navigare, iar selecția este păstrată în browser.
+Pagina principală include o previzualizare vizuală a calendarului și a cardurilor de meci; datele afișate sunt demonstrative și nu sunt conectate încă la API-Sports.
+
 ## Rulare locală
 
 Aplicația are două proiecte: [backend/](backend/) (Spring Boot) și [frontend/](frontend/) (Angular). Pentru cerințe și comenzi de pornire, vezi [DEPENDENCIES.md](DEPENDENCIES.md).

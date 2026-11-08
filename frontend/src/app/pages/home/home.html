@@ -1,0 +1,113 @@
+<section class="home-page">
+  <div class="page-heading">
+    <div>
+      <p class="eyebrow">SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}</p>
+      <h1>Scoruri și meciuri</h1>
+      <p class="page-subtitle">Urmărește competițiile care te interesează.</p>
+    </div>
+    <div class="backend-indicator" [class.backend-up]="backendStatus() === 'UP'">
+      <span class="backend-dot"></span>
+      Backend {{ backendStatus() }}
+    </div>
+  </div>
+
+  <div class="demo-notice">
+    <span class="demo-icon" aria-hidden="true">i</span>
+    <span><strong>Previzualizare</strong> — scorurile și echipele de mai jos sunt date demonstrative, nu sunt preluate din API.</span>
+  </div>
+
+  <section class="schedule-section" aria-labelledby="schedule-heading">
+    <div class="schedule-heading">
+      <div>
+        <p class="section-kicker">PROGRAM</p>
+        <h2 id="schedule-heading">{{ selectedDateLabel() }}</h2>
+      </div>
+      <span class="timezone-label">Ore locale</span>
+    </div>
+
+    <div class="date-selector" aria-label="Selectează ziua">
+      @for (offset of dateOptions; track offset) {
+        <button
+          type="button"
+          class="date-btn"
+          [class.active]="selectedDayOffset() === offset"
+          [attr.aria-pressed]="selectedDayOffset() === offset"
+          (click)="chooseDay(offset)"
+        >
+          <span>{{ dayLabel(offset) }}</span>
+          <small>{{ offset === 0 ? 'Program' : offset < 0 ? 'Rezultate' : 'Meciuri' }}</small>
+        </button>
+      }
+      <label class="calendar-btn">
+        <span aria-hidden="true">▦</span>
+        <span>Calendar</span>
+        <input
+          type="date"
+          aria-label="Alege o dată, în intervalul de 7 zile"
+          [min]="minDate"
+          [max]="maxDate"
+          [value]="dateInputValue()"
+          (change)="onDateChange($event)"
+        />
+      </label>
+    </div>
+  </section>
+
+  <section class="matches-section" aria-label="Meciuri demonstrative">
+    @for (competition of competitions(); track competition.name) {
+      <article class="league-card">
+        <header class="league-header">
+          <div class="league-identity">
+            <div class="league-mark" aria-hidden="true">✦</div>
+            <div>
+              <h3>{{ competition.name }}</h3>
+              <p>{{ competition.country }} <span class="meta-separator">·</span> {{ competition.round }}</p>
+            </div>
+          </div>
+          <span class="demo-tag">DEMO</span>
+        </header>
+
+        @for (match of competition.matches; track match.id) {
+          <div class="match-row">
+            <div class="match-time" [class.live-time]="match.status === 'live'">
+              @if (match.status === 'live') {
+                <span class="live-pulse"></span>
+              }
+              {{ match.time }}
+            </div>
+
+            <div class="match-teams">
+              <div class="team">
+                <span class="team-mark">{{ match.homeMark }}</span>
+                <span>{{ match.homeTeam }}</span>
+              </div>
+              <div class="team">
+                <span class="team-mark">{{ match.awayMark }}</span>
+                <span>{{ match.awayTeam }}</span>
+              </div>
+            </div>
+
+            <div class="match-result">
+              @if (match.homeScore !== null && match.awayScore !== null) {
+                <span [class.winner]="match.homeScore > match.awayScore">{{ match.homeScore }}</span>
+                <span [class.winner]="match.awayScore > match.homeScore">{{ match.awayScore }}</span>
+              } @else {
+                <span>–</span>
+                <span>–</span>
+              }
+            </div>
+
+            <div class="match-status" [class.status-live]="match.status === 'live'">
+              {{ statusLabel(match.status) }}
+            </div>
+          </div>
+        }
+      </article>
+    }
+  </section>
+
+  <footer class="home-footer">
+    <span class="footer-live-dot"></span>
+    Design demonstrativ <span class="meta-separator">·</span> Fus orar browser: {{ browserTimeZone }}
+  </footer>
+</section>

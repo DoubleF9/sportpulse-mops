@@ -14,7 +14,7 @@ describe('App', () => {
   it('should render the navigation', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
-    const links = (fixture.nativeElement as HTMLElement).querySelectorAll('nav a');
+    const links = (fixture.nativeElement as HTMLElement).querySelectorAll('header a');
     expect(links.length).toBe(4);
   });
 });

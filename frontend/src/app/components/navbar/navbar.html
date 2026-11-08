@@ -1,6 +1,29 @@
-<nav>
-  <a class="brand" routerLink="/">SportPulse</a>
-  <a routerLink="/standings" routerLinkActive="active">Clasamente</a>
-  <a routerLink="/favorites" routerLinkActive="active">Favorite</a>
-  <a routerLink="/login" routerLinkActive="active">Autentificare</a>
-</nav>
+<header class="site-header">
+  <div class="navbar-container">
+    <a class="brand" routerLink="/" aria-label="SportPulse, pagina principală">
+      <span class="brand-mark" aria-hidden="true">S</span>
+      <span>SportPulse<span class="brand-dot">.</span></span>
+    </a>
+
+    <div class="sport-pills" role="group" aria-label="Alege sportul">
+      @for (sport of sports; track sport.id) {
+        <button
+          type="button"
+          class="sport-btn"
+          [class.active]="selectedSport() === sport.id"
+          [attr.aria-pressed]="selectedSport() === sport.id"
+          (click)="selectSport(sport.id)"
+        >
+          <span aria-hidden="true">{{ sport.id === 'football' ? '⚽' : sport.id === 'basketball' ? '🏀' : '🏒' }}</span>
+          {{ sport.label }}
+        </button>
+      }
+    </div>
+
+    <nav class="nav-links" aria-label="Navigare principală">
+      <a routerLink="/standings" routerLinkActive="active" class="nav-link">Clasamente</a>
+      <a routerLink="/favorites" routerLinkActive="active" class="nav-link">Favorite <span aria-hidden="true">★</span></a>
+      <a routerLink="/login" routerLinkActive="active" class="auth-link">Autentificare</a>
+    </nav>
+  </div>
+</header>
