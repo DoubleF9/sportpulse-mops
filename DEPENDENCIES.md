@@ -25,7 +25,7 @@ Backend-ul citește secretele din `backend/.env`, fișier care nu se pune în Gi
 1. Copiați `backend/.env.example` în `backend/.env`.
 2. Completați `MONGODB_URI` și `API_SPORTS_KEY` cu valorile primite pe canalul privat al echipei.
 
-Fără `MONGODB_URI`, backend-ul nu pornește și afișează eroarea `The connection string is invalid`. `API_SPORTS_KEY` nu este folosită încă.
+Fără `MONGODB_URI`, backend-ul nu pornește și afișează eroarea `The connection string is invalid`. `API_SPORTS_KEY` este necesară pentru programul meciurilor de fotbal și pentru clasamente.
 
 ## Pornirea aplicației
 

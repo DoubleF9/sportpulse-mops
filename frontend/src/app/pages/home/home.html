@@ -1,7 +1,9 @@
 <section class="home-page">
   <div class="page-heading">
     <div>
-      <p class="eyebrow">SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}</p>
+      <p class="eyebrow">
+        SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}
+      </p>
       <h1>Scoruri și meciuri</h1>
       <p class="page-subtitle">Urmărește competițiile care te interesează.</p>
     </div>
@@ -11,10 +13,15 @@
     </div>
   </div>
 
-  <div class="demo-notice">
-    <span class="demo-icon" aria-hidden="true">i</span>
-    <span><strong>Previzualizare</strong> — scorurile și echipele de mai jos sunt date demonstrative, nu sunt preluate din API.</span>
-  </div>
+  @if (!isFootball()) {
+    <div class="demo-notice">
+      <span class="demo-icon" aria-hidden="true">i</span>
+      <span
+        ><strong>Previzualizare</strong> — scorurile și echipele de mai jos sunt date demonstrative,
+        nu sunt preluate din API.</span
+      >
+    </div>
+  }
 
   <section class="schedule-section" aria-labelledby="schedule-heading">
     <div class="schedule-heading">
@@ -53,18 +60,56 @@
     </div>
   </section>
 
-  <section class="matches-section" aria-label="Meciuri demonstrative">
-    @for (competition of competitions(); track competition.name) {
+  <section
+    class="matches-section"
+    aria-label="Meciuri"
+    [attr.aria-busy]="schedule().loading"
+    aria-live="polite"
+  >
+    @if (isFootball() && schedule().loading) {
+      <p class="demo-notice" role="status">Se încarcă programul meciurilor…</p>
+    } @else if (isFootball() && schedule().error) {
+      <div class="demo-notice" role="alert">
+        <span>{{ schedule().error }}</span>
+        <button type="button" class="retry-btn" (click)="retry()">Reîncearcă</button>
+      </div>
+    } @else if (isFootball() && competitions().length === 0) {
+      <p class="demo-notice" role="status">Nu există meciuri pentru această zi.</p>
+    }
+    @if (isFootball() && schedule().data?.stale) {
+      <p class="demo-notice" role="status">
+        Furnizorul este indisponibil. Se afișează ultimele date salvate.
+      </p>
+    }
+    @for (competition of competitions(); track competition.id ?? competition.name) {
       <article class="league-card">
         <header class="league-header">
           <div class="league-identity">
-            <div class="league-mark" aria-hidden="true">✦</div>
+            <div class="league-mark" aria-hidden="true">
+              @if (competition.logo) {
+                <img
+                  [src]="competition.logo"
+                  alt=""
+                  loading="lazy"
+                  (error)="hideBrokenImage($event)"
+                />
+              } @else {
+                ✦
+              }
+            </div>
             <div>
               <h3>{{ competition.name }}</h3>
-              <p>{{ competition.country }} <span class="meta-separator">·</span> {{ competition.round }}</p>
+              <p>
+                {{ competition.country }}
+                @if (competition.round) {
+                  <span class="meta-separator">·</span> {{ competition.round }}
+                }
+              </p>
             </div>
           </div>
-          <span class="demo-tag">DEMO</span>
+          @if (!isFootball()) {
+            <span class="demo-tag">DEMO</span>
+          }
         </header>
 
         @for (match of competition.matches; track match.id) {
@@ -78,19 +123,45 @@
 
             <div class="match-teams">
               <div class="team">
-                <span class="team-mark">{{ match.homeMark }}</span>
+                <span class="team-mark">
+                  @if (match.homeLogo) {
+                    <img
+                      [src]="match.homeLogo"
+                      alt=""
+                      loading="lazy"
+                      (error)="hideBrokenImage($event)"
+                    />
+                  } @else {
+                    {{ match.homeMark }}
+                  }
+                </span>
                 <span>{{ match.homeTeam }}</span>
               </div>
               <div class="team">
-                <span class="team-mark">{{ match.awayMark }}</span>
+                <span class="team-mark">
+                  @if (match.awayLogo) {
+                    <img
+                      [src]="match.awayLogo"
+                      alt=""
+                      loading="lazy"
+                      (error)="hideBrokenImage($event)"
+                    />
+                  } @else {
+                    {{ match.awayMark }}
+                  }
+                </span>
                 <span>{{ match.awayTeam }}</span>
               </div>
             </div>
 
             <div class="match-result">
               @if (match.homeScore !== null && match.awayScore !== null) {
-                <span [class.winner]="match.homeScore > match.awayScore">{{ match.homeScore }}</span>
-                <span [class.winner]="match.awayScore > match.homeScore">{{ match.awayScore }}</span>
+                <span [class.winner]="match.homeScore > match.awayScore">{{
+                  match.homeScore
+                }}</span>
+                <span [class.winner]="match.awayScore > match.homeScore">{{
+                  match.awayScore
+                }}</span>
               } @else {
                 <span>–</span>
                 <span>–</span>
@@ -108,6 +179,14 @@
 
   <footer class="home-footer">
     <span class="footer-live-dot"></span>
-    Design demonstrativ <span class="meta-separator">·</span> Fus orar browser: {{ browserTimeZone }}
+    @if (isFootball()) {
+      API-Sports · Date actualizate cel mult o dată pe oră
+      @if (schedule().data; as data) {
+        <span class="meta-separator">·</span> Actualizat la {{ data.updatedAt | date: 'HH:mm' }}
+      }
+    } @else {
+      Design demonstrativ
+    }
+    <span class="meta-separator">·</span> Fus orar browser: {{ browserTimeZone }}
   </footer>
 </section>
