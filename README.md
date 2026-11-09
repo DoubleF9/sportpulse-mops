@@ -9,6 +9,8 @@ Detaliile incrementului, verificările și limitările sunt în [docs/Football_S
 
 Pagina fiecărui meci are un URL direct, cu detalii pentru toate cele trei sporturi. Clasamentele de fotbal folosesc un cache de șase ore și afișează ultima actualizare sau datele salvate când furnizorul este indisponibil. Backend-ul înregistrează cererile externe pe sport și zi UTC în MongoDB, fără a număra citirile din cache. Vezi [detalii meci](docs/Match_Details.md) și [cache și consum API](docs/API_Cache_Usage.md) pentru verificări și limitele implementării.
 
+Selectorul „Fus orar” folosește implicit zona browserului și poate salva o preferință locală. Programul, zilele calendaristice, detaliile meciurilor și marcajele de actualizare urmează fusul ales. Domeniul implementat și criteriul de autentificare rămas în așteptare sunt explicate în [docs/Timezone_Preference.md](docs/Timezone_Preference.md).
+
 ## Rulare locală
 
 Aplicația are două proiecte: [backend/](backend/) (Spring Boot) și [frontend/](frontend/) (Angular). Pentru cerințe și comenzi de pornire, vezi [DEPENDENCIES.md](DEPENDENCIES.md).

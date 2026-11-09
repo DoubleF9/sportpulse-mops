@@ -10,6 +10,9 @@ import { FixturesResponse } from '../../models/fixture';
 import { Sport } from '../../models/sport';
 import { SportSelectionService } from '../../services/sport-selection.service';
 import { Home } from './home';
+import { of } from 'rxjs';
+import { HealthService } from '../../services/health.service';
+import { TimezoneService } from '../../services/timezone.service';
 
 describe('Home schedule', () => {
   let fixture: ComponentFixture<Home>;
@@ -327,5 +330,144 @@ describe('Home schedule', () => {
     expect(body().textContent).toContain('Pauză');
     expect(body().textContent).toContain('ANULAT');
     expect(body().textContent).toContain('ultimele date salvate');
+  });
+});
+
+describe('Home calendar in the preferred timezone', () => {
+  let http: HttpTestingController;
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+    vi.setSystemTime(new Date('2026-07-01T21:30:00Z'));
+    localStorage.clear();
+    localStorage.setItem('sportpulse.timezone', 'UTC');
+    TestBed.configureTestingModule({
+      imports: [Home],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideRouter([]),
+        { provide: HealthService, useValue: { getHealth: () => of({ status: 'UP' }) } },
+      ],
+    });
+    http = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    http.verify();
+    localStorage.clear();
+    vi.useRealTimers();
+  });
+
+  function create() {
+    const fixture = TestBed.createComponent(Home);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  function request() {
+    return http.expectOne((request) => request.url === '/api/fixtures');
+  }
+
+  it.each(['football', 'basketball', 'hockey'] as const)(
+    'requests the new local day and timezone for %s and cancels the previous request',
+    (sport) => {
+      localStorage.setItem('sportpulse.selectedSport', sport);
+      const fixture = create();
+      const pending = request();
+      expect(pending.request.params.get('date')).toBe('2026-07-01');
+      expect(pending.request.params.get('timezone')).toBe('UTC');
+      TestBed.inject(TimezoneService).selectTimezone('Europe/Bucharest');
+      TestBed.tick();
+      expect(pending.cancelled).toBe(true);
+      const selected = request();
+      expect(selected.request.params.get('date')).toBe('2026-07-02');
+      expect(selected.request.params.get('timezone')).toBe('Europe/Bucharest');
+      expect(selected.request.params.get('sport')).toBe(sport);
+      selected.flush({
+        competitions: [
+          {
+            id: 1,
+            name: 'League',
+            country: 'World',
+            round: null,
+            logo: null,
+            matches: [
+              {
+                id: 1,
+                homeTeam: 'Home',
+                awayTeam: 'Away',
+                homeLogo: null,
+                awayLogo: null,
+                homeScore: null,
+                awayScore: null,
+                kickoff: '2026-07-01T21:00:00Z',
+                status: 'NS',
+                elapsed: null,
+              },
+            ],
+          },
+        ],
+        updatedAt: '2026-07-01T21:00:00Z',
+        stale: false,
+      });
+      fixture.detectChanges();
+      const calendar = fixture.nativeElement.querySelector('input[type=date]') as HTMLInputElement;
+      expect(calendar.value).toBe('2026-07-02');
+      expect(calendar.min).toBe('2026-06-25');
+      expect(calendar.max).toBe('2026-07-09');
+      expect(fixture.nativeElement.querySelector('.match-time').textContent).toContain('00:00');
+      expect(fixture.nativeElement.textContent).toContain('Europe/Bucharest');
+    },
+  );
+
+  it('preserves an explicitly selected calendar day when the timezone changes', () => {
+    const fixture = create();
+    request().flush({ competitions: [], updatedAt: '2026-07-01T21:00:00Z', stale: false });
+    const calendar = fixture.nativeElement.querySelector('input[type=date]') as HTMLInputElement;
+    calendar.value = '2026-07-03';
+    calendar.dispatchEvent(new Event('change'));
+    TestBed.tick();
+    request().flush({ competitions: [], updatedAt: '2026-07-01T21:00:00Z', stale: false });
+    TestBed.inject(TimezoneService).selectTimezone('Pacific/Honolulu');
+    TestBed.tick();
+    const selected = request();
+    expect(selected.request.params.get('date')).toBe('2026-07-03');
+    expect(selected.request.params.get('timezone')).toBe('Pacific/Honolulu');
+    selected.flush({ competitions: [], updatedAt: '2026-07-01T21:00:00Z', stale: false });
+    fixture.detectChanges();
+    expect(calendar.value).toBe('2026-07-03');
+  });
+
+  it('navigates the full seven-day window across a daylight-saving transition', () => {
+    vi.setSystemTime(new Date('2026-03-28T22:30:00Z'));
+    localStorage.setItem('sportpulse.timezone', 'Europe/Bucharest');
+    const fixture = create();
+    const initial = request();
+    expect(initial.request.params.get('date')).toBe('2026-03-29');
+    initial.flush({ competitions: [], updatedAt: '2026-03-28T22:00:00Z', stale: false });
+    const calendar = fixture.nativeElement.querySelector('input[type=date]') as HTMLInputElement;
+    expect(calendar.min).toBe('2026-03-22');
+    expect(calendar.max).toBe('2026-04-05');
+    calendar.value = calendar.max;
+    calendar.dispatchEvent(new Event('change'));
+    TestBed.tick();
+    const lastDay = request();
+    expect(lastDay.request.params.get('date')).toBe('2026-04-05');
+    lastDay.flush({ competitions: [], updatedAt: '2026-03-28T22:00:00Z', stale: false });
+  });
+
+  it('advances the today schedule once when local midnight passes', () => {
+    vi.setSystemTime(new Date('2026-11-09T23:59:30Z'));
+    create();
+    request().flush({ competitions: [], updatedAt: '2026-11-09T23:00:00Z', stale: false });
+    vi.advanceTimersByTime(60_000);
+    TestBed.tick();
+    const tomorrow = request();
+    expect(tomorrow.request.params.get('date')).toBe('2026-11-10');
+    tomorrow.flush({ competitions: [], updatedAt: '2026-11-10T00:00:00Z', stale: false });
+    vi.advanceTimersByTime(60_000);
+    TestBed.tick();
+    http.expectNone((request) => request.url === '/api/fixtures');
   });
 });

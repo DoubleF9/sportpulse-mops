@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { HealthService } from '../../services/health.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
 import { StandingsResponse } from '../../services/standings.service';
+import { TimezoneService } from '../../services/timezone.service';
 import { Standings } from './standings';
 
 describe('Standings cache and error presentation', () => {
@@ -95,6 +96,19 @@ describe('Standings cache and error presentation', () => {
     expect(fixture.nativeElement.textContent).toContain('ultimele date salvate');
     expect(fixture.nativeElement.textContent).toContain('FCSB');
     expect(fixture.nativeElement.textContent).toContain('Actualizat la 09.11.2026');
+  });
+
+  it('converts the update timestamp without refetching standings', () => {
+    const fixture = create();
+    http.expectOne('/api/standings?sport=football').flush(response());
+    const timezone = TestBed.inject(TimezoneService);
+    timezone.selectTimezone('UTC');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('09.11.2026 12:00');
+    timezone.selectTimezone('Asia/Tokyo');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('09.11.2026 21:00');
+    http.expectNone((request) => request.url === '/api/standings');
   });
 
   it('shows quota errors distinctly from an empty competition and retries', () => {

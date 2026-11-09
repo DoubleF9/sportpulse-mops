@@ -1,0 +1,22 @@
+<div class="timezone-preference">
+  <label for="timezone-preference">Fus orar</label>
+  <select
+    id="timezone-preference"
+    (change)="changeTimezone($event)"
+    aria-describedby="timezone-hint"
+  >
+    <option value="" [selected]="timezone.selectedValue() === ''">
+      Automat ({{ timezone.detectedTimeZone }})
+    </option>
+    @for (zone of timezone.options(); track zone) {
+      <option [value]="zone" [selected]="timezone.selectedValue() === zone">{{ zone }}</option>
+    }
+  </select>
+  <small id="timezone-hint" role="status">
+    @if (timezone.storageUnavailable()) {
+      Preferința se aplică doar până la reîncărcarea paginii.
+    } @else {
+      Preferință pentru acest browser
+    }
+  </small>
+</div>

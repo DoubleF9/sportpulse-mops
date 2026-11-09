@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
@@ -16,6 +15,8 @@ import {
 import { FixturesService } from '../../services/fixtures.service';
 import { HealthService } from '../../services/health.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
+import { TimezoneService } from '../../services/timezone.service';
+import { calendarDateLabel, calendarDayOffset, shiftCalendarDate } from '../../models/zoned-date';
 
 interface ScheduleState {
   loading: boolean;
@@ -46,20 +47,9 @@ interface ScheduleCompetition {
   matches: ScheduleMatch[];
 }
 
-function startOfDay(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function dateToInputValue(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 @Component({
   selector: 'app-home',
-  imports: [DatePipe, MatchFilters, RouterLink],
+  imports: [MatchFilters, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
@@ -70,39 +60,43 @@ export class Home {
   private readonly reload = signal(0);
   private readonly fixturesService = inject(FixturesService);
   private readonly sportSelection = inject(SportSelectionService);
-  private readonly today = startOfDay(new Date());
-  private readonly selectedDateState = signal(this.today);
-  protected readonly selectedDate = this.selectedDateState.asReadonly();
+  protected readonly timezone = inject(TimezoneService);
+  private readonly today = this.timezone.today;
+  private readonly selectedDateState = signal<string | null>(null);
+  protected readonly selectedDate = computed(() => {
+    const selected = this.selectedDateState();
+    return selected && Math.abs(calendarDayOffset(selected, this.today())) <= 7
+      ? selected
+      : this.today();
+  });
   protected readonly selectedSport = this.sportSelection.selectedSport;
   protected readonly selectedSportLabel = computed(
     () => SPORTS.find((sport) => sport.id === this.selectedSport())?.label ?? 'Fotbal',
   );
   protected readonly selectedDayOffset = computed(() =>
-    Math.round((this.selectedDate().getTime() - this.today.getTime()) / 86_400_000),
+    calendarDayOffset(this.selectedDate(), this.today()),
   );
   protected readonly dateOptions = [-3, -2, -1, 0, 1, 2, 3];
-  protected readonly minDate = dateToInputValue(
-    new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate() - 7),
-  );
-  protected readonly maxDate = dateToInputValue(
-    new Date(this.today.getFullYear(), this.today.getMonth(), this.today.getDate() + 7),
-  );
-  protected readonly dateInputValue = computed(() => dateToInputValue(this.selectedDate()));
+  protected readonly minDate = computed(() => shiftCalendarDate(this.today(), -7));
+  protected readonly maxDate = computed(() => shiftCalendarDate(this.today(), 7));
+  protected readonly dateInputValue = this.selectedDate;
   protected readonly selectedDateLabel = computed(() =>
-    new Intl.DateTimeFormat('ro-RO', { weekday: 'long', day: 'numeric', month: 'long' }).format(
-      this.selectedDate(),
-    ),
+    calendarDateLabel(this.selectedDate(), {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    }),
   );
-  protected readonly browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   private readonly request = computed(() => ({
     sport: this.selectedSport(),
     date: this.dateInputValue(),
+    timezone: this.timezone.timeZone(),
     attempt: this.reload(),
   }));
   protected readonly schedule = toSignal(
     toObservable(this.request).pipe(
-      switchMap(({ sport, date }) =>
-        this.fixturesService.getFixtures(date, this.browserTimeZone, sport).pipe(
+      switchMap(({ sport, date, timezone }) =>
+        this.fixturesService.getFixtures(date, timezone, sport).pipe(
           map((data): ScheduleState => ({ loading: false, error: null, data })),
           startWith<ScheduleState>({ loading: true, error: null, data: null }),
           catchError((error: HttpErrorResponse) =>
@@ -137,7 +131,7 @@ export class Home {
         ...competition,
         matches: competition.matches
           .filter((match) => !filters.liveOnly || isLiveMatch(match.status, this.selectedSport()))
-          .map((match) => presentFixture(match, this.selectedSport(), this.browserTimeZone)),
+          .map((match) => presentFixture(match, this.selectedSport(), this.timezone.timeZone())),
       }))
       .filter((competition) => competition.matches.length > 0);
   });
@@ -197,9 +191,7 @@ export class Home {
   );
 
   protected chooseDay(offset: number): void {
-    const date = new Date(this.today);
-    date.setDate(date.getDate() + offset);
-    this.selectedDateState.set(date);
+    this.selectedDateState.set(offset === 0 ? null : shiftCalendarDate(this.today(), offset));
   }
 
   protected retry(): void {
@@ -221,15 +213,14 @@ export class Home {
 
   protected onDateChange(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    const [year, month, day] = value.split('-').map(Number);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !year || !month || !day) {
-      return;
-    }
-
-    const selected = new Date(year, month - 1, day);
-    const offset = Math.round((selected.getTime() - this.today.getTime()) / 86_400_000);
-    if (dateToInputValue(selected) === value && offset >= -7 && offset <= 7) {
-      this.selectedDateState.set(selected);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+    try {
+      const offset = calendarDayOffset(value, this.today());
+      if (shiftCalendarDate(value, 0) === value && offset >= -7 && offset <= 7) {
+        this.selectedDateState.set(value === this.today() ? null : value);
+      }
+    } catch {
+      // Ignore incomplete or invalid date input.
     }
   }
 
@@ -244,9 +235,10 @@ export class Home {
       return 'Mâine';
     }
 
-    const date = new Date(this.today);
-    date.setDate(date.getDate() + offset);
-    return new Intl.DateTimeFormat('ro-RO', { weekday: 'short', day: 'numeric' }).format(date);
+    return calendarDateLabel(shiftCalendarDate(this.today(), offset), {
+      weekday: 'short',
+      day: 'numeric',
+    });
   }
 
   protected statusLabel(status: MatchStatus): string {

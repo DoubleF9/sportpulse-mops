@@ -1,0 +1,35 @@
+.timezone-preference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 1.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+select {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 0.5rem;
+  background: var(--bg-surface);
+  color: var(--text);
+  font: inherit;
+}
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+small {
+  font-size: 0.7rem;
+}
+@media (max-width: 560px) {
+  .timezone-preference {
+    justify-content: flex-start;
+  }
+  small {
+    width: 100%;
+  }
+}

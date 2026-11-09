@@ -19,7 +19,7 @@
         <p class="section-kicker">PROGRAM</p>
         <h2 id="schedule-heading">{{ selectedDateLabel() }}</h2>
       </div>
-      <span class="timezone-label">Ore locale</span>
+      <span class="timezone-label">Ore: {{ timezone.timeZone() }}</span>
     </div>
 
     <div class="date-selector" aria-label="Selectează ziua">
@@ -51,8 +51,8 @@
           class="calendar-input"
           type="date"
           aria-label="Alege o dată, în intervalul de 7 zile"
-          [min]="minDate"
-          [max]="maxDate"
+          [min]="minDate()"
+          [max]="maxDate()"
           [value]="dateInputValue()"
           (change)="onDateChange($event)"
         />
@@ -93,7 +93,7 @@
     @if (schedule().data?.stale) {
       <p class="demo-notice" role="status">
         Programul nu a putut fi actualizat. Se afișează ultimele date salvate la
-        {{ schedule().data?.updatedAt | date: 'dd.MM.yyyy HH:mm' }}.
+        {{ timezone.formatDateTime(schedule().data?.updatedAt) }}.
       </p>
     }
     @for (competition of competitions(); track competition.id ?? competition.name) {
@@ -197,8 +197,9 @@
     <span class="footer-live-dot"></span>
     API-Sports
     @if (schedule().data; as data) {
-      <span class="meta-separator">·</span> Actualizat la {{ data.updatedAt | date: 'HH:mm' }}
+      <span class="meta-separator">·</span> Actualizat la
+      {{ timezone.formatDateTime(data.updatedAt) }}
     }
-    <span class="meta-separator">·</span> Fus orar browser: {{ browserTimeZone }}
+    <span class="meta-separator">·</span> Fus orar: {{ timezone.timeZone() }}
   </footer>
 </section>
