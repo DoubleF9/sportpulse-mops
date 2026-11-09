@@ -29,6 +29,8 @@ export interface StandingsTable {
 
 export interface StandingsResponse {
   standings: StandingsTable[];
+  updatedAt: string;
+  stale: boolean;
 }
 
 @Injectable({ providedIn: 'root' })

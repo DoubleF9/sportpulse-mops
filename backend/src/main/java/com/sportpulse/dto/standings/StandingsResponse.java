@@ -1,10 +1,16 @@
 package com.sportpulse.dto.standings;
 
 import java.util.List;
+import java.time.Instant;
 
 public record StandingsResponse(
-		List<StandingsTable> standings
+		List<StandingsTable> standings,
+		Instant updatedAt,
+		boolean stale
 ) {
+	public StandingsResponse asStale() {
+		return new StandingsResponse(standings, updatedAt, true);
+	}
 	public record StandingsTable(
 			String name,
 			String country,

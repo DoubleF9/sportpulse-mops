@@ -7,6 +7,8 @@ Pagina principală afișează meciuri reale de fotbal, baschet și hochei din AP
 
 Detaliile incrementului, verificările și limitările sunt în [docs/Football_Schedule_Increment.md](docs/Football_Schedule_Increment.md).
 
+Pagina fiecărui meci are un URL direct, cu detalii pentru toate cele trei sporturi. Clasamentele de fotbal folosesc un cache de șase ore și afișează ultima actualizare sau datele salvate când furnizorul este indisponibil. Backend-ul înregistrează cererile externe pe sport și zi UTC în MongoDB, fără a număra citirile din cache. Vezi [detalii meci](docs/Match_Details.md) și [cache și consum API](docs/API_Cache_Usage.md) pentru verificări și limitele implementării.
+
 ## Rulare locală
 
 Aplicația are două proiecte: [backend/](backend/) (Spring Boot) și [frontend/](frontend/) (Angular). Pentru cerințe și comenzi de pornire, vezi [DEPENDENCIES.md](DEPENDENCIES.md).
