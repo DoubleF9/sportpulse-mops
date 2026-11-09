@@ -26,11 +26,13 @@ export function matchStatus(status: string, sport: Sport): MatchStatus {
 
 export function presentFixture(match: Fixture, sport: Sport, timezone: string) {
   const status = matchStatus(match.status, sport);
-  let time = new Intl.DateTimeFormat('ro-RO', {
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZone: timezone,
-  }).format(new Date(match.kickoff));
+  let time = match.kickoff
+    ? new Intl.DateTimeFormat('ro-RO', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: timezone,
+      }).format(new Date(match.kickoff))
+    : '—';
   if (match.status === 'TBD') time = 'Ora neconfirmată';
   else if (['HT', 'BT'].includes(match.status)) time = 'Pauză';
   else if (status === 'live') {
@@ -57,4 +59,16 @@ export function presentFixture(match: Fixture, sport: Sport, timezone: string) {
     homeMark: match.homeTeam.slice(0, 3).toUpperCase(),
     awayMark: match.awayTeam.slice(0, 3).toUpperCase(),
   };
+}
+
+export function matchStatusLabel(status: MatchStatus): string {
+  return {
+    live: 'LIVE',
+    scheduled: 'PROGRAMAT',
+    finished: 'FINAL',
+    postponed: 'AMÂNAT',
+    cancelled: 'ANULAT',
+    interrupted: 'ÎNTRERUPT',
+    unknown: 'NECUNOSCUT',
+  }[status];
 }

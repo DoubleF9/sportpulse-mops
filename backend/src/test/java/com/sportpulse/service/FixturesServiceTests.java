@@ -23,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.sportpulse.config.ApiSportsConfig;
+import com.sportpulse.client.ApiSportsClient;
 import com.sportpulse.dto.fixtures.FixturesResponse;
 import com.sportpulse.model.CachedFixtures;
 import com.sportpulse.repository.CachedFixturesRepository;
@@ -41,7 +42,7 @@ class FixturesServiceTests {
 	void setUp() {
 		RestTemplate restTemplate = new RestTemplate();
 		server = MockRestServiceServer.createServer(restTemplate);
-		service = new FixturesService(restTemplate, config, repository);
+		service = new FixturesService(new ApiSportsClient(restTemplate, config), repository);
 		when(config.getHost("football")).thenReturn("v3.football.api-sports.io");
 		when(config.getApiKey()).thenReturn("test-key");
 	}

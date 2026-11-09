@@ -125,7 +125,11 @@
         </header>
 
         @for (match of competition.matches; track match.id) {
-          <div class="match-row">
+          <a
+            class="match-row"
+            [routerLink]="['/matches', selectedSport(), match.id]"
+            [attr.aria-label]="match.homeTeam + ' – ' + match.awayTeam + ': detalii meci'"
+          >
             <div class="match-time" [class.live-time]="match.status === 'live'">
               @if (match.status === 'live') {
                 <span class="live-pulse"></span>
@@ -183,7 +187,7 @@
             <div class="match-status" [class.status-live]="match.status === 'live'">
               {{ statusLabel(match.status) }}
             </div>
-          </div>
+          </a>
         }
       </article>
     }

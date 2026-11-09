@@ -2,7 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { FixturesResponse } from '../models/fixture';
+import { FixturesResponse, MatchDetailsResponse } from '../models/fixture';
 import { Sport } from '../models/sport';
 
 @Injectable({ providedIn: 'root' })
@@ -16,5 +16,9 @@ export class FixturesService {
   ): Observable<FixturesResponse> {
     const params = new HttpParams().set('date', date).set('timezone', timezone).set('sport', sport);
     return this.http.get<FixturesResponse>('/api/fixtures', { params });
+  }
+
+  getMatch(sport: Sport, id: number): Observable<MatchDetailsResponse> {
+    return this.http.get<MatchDetailsResponse>(`/api/matches/${sport}/${id}`);
   }
 }

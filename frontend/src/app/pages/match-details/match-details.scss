@@ -1,0 +1,147 @@
+.match-details-page {
+  display: grid;
+  gap: 1.4rem;
+}
+.back-link {
+  width: fit-content;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.back-link:hover {
+  color: var(--accent);
+}
+.eyebrow {
+  color: var(--accent);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+}
+h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3vw, 2.3rem);
+  letter-spacing: -0.05em;
+}
+.score-card,
+.match-info,
+.notice {
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--bg-surface);
+  padding: 1.25rem;
+  margin: 0;
+}
+.competition-heading {
+  margin: 0 0 1.5rem;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.85rem;
+}
+.scoreboard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 1rem;
+}
+.team {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  text-align: center;
+  min-width: 0;
+}
+.team img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+}
+.team h2 {
+  margin: 0;
+  font-size: clamp(0.85rem, 2vw, 1.2rem);
+  overflow-wrap: anywhere;
+}
+.team-role,
+.updated-at {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+.score-summary {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+}
+.score {
+  font-size: clamp(1.5rem, 4vw, 2.6rem);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.score > span {
+  color: var(--muted);
+}
+.status {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 0.3rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.65rem;
+  font-weight: 800;
+}
+.status.live {
+  color: var(--live);
+  border-color: var(--live);
+}
+.match-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.match-info dt {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.4rem;
+}
+.match-info dd {
+  margin: 0;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.match-info small {
+  display: block;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.notice {
+  color: var(--muted);
+  line-height: 1.5;
+}
+.notice p {
+  margin: 0 0 0.75rem;
+}
+button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-hover);
+  color: var(--text);
+  cursor: pointer;
+}
+button:focus-visible,
+.back-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+@media (max-width: 480px) {
+  .score-card,
+  .match-info {
+    padding: 1rem;
+  }
+  .scoreboard {
+    gap: 0.5rem;
+  }
+  .team img {
+    width: 42px;
+    height: 42px;
+  }
+  .match-info {
+    grid-template-columns: 1fr;
+  }
+}

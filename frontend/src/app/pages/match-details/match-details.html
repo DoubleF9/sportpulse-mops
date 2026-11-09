@@ -1,0 +1,91 @@
+<section class="match-details-page" aria-live="polite" [attr.aria-busy]="state().loading">
+  <a routerLink="/" class="back-link">← Înapoi la meciuri</a>
+  <header>
+    <p class="eyebrow">SPORTPULSE · {{ sportLabel() }}</p>
+    <h1>Detalii meci</h1>
+  </header>
+
+  @if (state().loading) {
+    <p class="notice" role="status">Se încarcă detaliile meciului…</p>
+  } @else if (state().error) {
+    <div class="notice" role="alert">
+      <p>{{ state().error }}</p>
+      <button type="button" (click)="retry()">Reîncearcă</button>
+    </div>
+  }
+
+  @if (state().data; as data) {
+    @if (match(); as game) {
+      @if (data.stale) {
+        <p class="notice" role="status">
+          Datele nu au putut fi actualizate. Se afișează ultimele date salvate la
+          {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}.
+        </p>
+      }
+      <article class="score-card" aria-label="Scorul meciului">
+        <p class="competition-heading">{{ data.competition || '—' }} · {{ data.country || '—' }}</p>
+        <div class="scoreboard">
+          <div class="team">
+            @if (game.homeLogo) {
+              <img [src]="game.homeLogo" alt="" (error)="hideBrokenImage($event)" />
+            }
+            <h2>{{ game.homeTeam }}</h2>
+            <span class="team-role">Gazde</span>
+          </div>
+          <div class="score-summary">
+            <strong class="score"
+              >{{ game.homeScore ?? '—' }} <span>–</span> {{ game.awayScore ?? '—' }}</strong
+            >
+            <span class="status" [class.live]="game.status === 'live'">{{ statusLabel() }}</span>
+            @if (game.status === 'live') {
+              <span>{{ game.time }}</span>
+            }
+          </div>
+          <div class="team">
+            @if (game.awayLogo) {
+              <img [src]="game.awayLogo" alt="" (error)="hideBrokenImage($event)" />
+            }
+            <h2>{{ game.awayTeam }}</h2>
+            <span class="team-role">Oaspeți</span>
+          </div>
+        </div>
+      </article>
+
+      <dl class="match-info">
+        <div>
+          <dt>Competiție</dt>
+          <dd>{{ data.competition || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Țară</dt>
+          <dd>{{ data.country || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Etapă</dt>
+          <dd>{{ data.round || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Data și ora locală</dt>
+          <dd>
+            {{ (game.kickoff | date: 'dd.MM.yyyy HH:mm') || '—' }} <small>{{ timezone }}</small>
+          </dd>
+        </div>
+        @if (data.sport !== 'hockey') {
+          <div>
+            <dt>Scor la pauză</dt>
+            <dd>{{ data.halftimeHome ?? '—' }} – {{ data.halftimeAway ?? '—' }}</dd>
+          </div>
+        }
+        <div>
+          <dt>Stadion / Sală</dt>
+          <dd>{{ data.venue || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Arbitru</dt>
+          <dd>{{ data.referee || '—' }}</dd>
+        </div>
+      </dl>
+      <p class="updated-at">Actualizat la {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</p>
+    }
+  }
+</section>

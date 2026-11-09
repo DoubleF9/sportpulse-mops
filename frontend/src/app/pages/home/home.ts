@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -58,7 +59,7 @@ function dateToInputValue(date: Date): string {
 
 @Component({
   selector: 'app-home',
-  imports: [DatePipe, MatchFilters],
+  imports: [DatePipe, MatchFilters, RouterLink],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
