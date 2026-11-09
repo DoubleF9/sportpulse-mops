@@ -15,6 +15,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
@@ -40,8 +42,50 @@ class FixturesServiceTests {
 		RestTemplate restTemplate = new RestTemplate();
 		server = MockRestServiceServer.createServer(restTemplate);
 		service = new FixturesService(restTemplate, config, repository);
-		when(config.getFootballHost()).thenReturn("v3.football.api-sports.io");
+		when(config.getHost("football")).thenReturn("v3.football.api-sports.io");
 		when(config.getApiKey()).thenReturn("test-key");
+	}
+
+	@Test
+	void sportsWithTheSameDateUseDifferentCaches() {
+		FixturesResponse response = new FixturesResponse(List.of(), Instant.now(), false);
+		for (String sport : List.of("football", "basketball", "hockey")) {
+			String key = "fixtures:" + sport + ":2026-11-09:Europe/Bucharest";
+			when(repository.findById(key)).thenReturn(Optional.of(new CachedFixtures(key, response, Instant.now().plusSeconds(60))));
+			assertSame(response, service.getFixtures(sport, DATE, ZONE));
+		}
+		server.verify();
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "basketball", "hockey" })
+	void mapsOtherSportsScoresClocksAndGroups(String sport) {
+		when(config.getHost(sport)).thenReturn("v1." + sport + ".api-sports.io");
+		String scores = sport.equals("basketball") ? "{\"home\":{\"total\":81},\"away\":{\"total\":null}}"
+				: "{\"home\":3,\"away\":null}";
+		String status = sport.equals("basketball") ? "Q4" : "P3";
+		String body = """
+				{"errors":[],"response":[{"id":42,"timestamp":1794247200,
+				 "league":{"id":12,"name":"League","logo":"league.png"},"country":{"name":"USA"},
+				 "status":{"short":"%s","timer":"04:32"},"teams":{"home":{"name":"Home","logo":null},
+				 "away":{"name":"Away","logo":null}},"scores":%s}]}
+				""".formatted(status, scores);
+		if (sport.equals("hockey")) {
+			body = body.replace("\"timer\":\"04:32\"", "\"timer\":null")
+					.replace("\"id\":42", "\"id\":42,\"timer\":\"04:32\"");
+		}
+		server.expect(requestTo("https://v1." + sport + ".api-sports.io/games?date=2026-11-09&timezone=Europe/Bucharest"))
+				.andExpect(header("x-apisports-key", "test-key")).andRespond(withSuccess(body, MediaType.APPLICATION_JSON));
+		var response = service.getFixtures(sport, DATE, ZONE);
+		var competition = response.competitions().getFirst();
+		assertEquals("USA", competition.country());
+		var match = competition.matches().getFirst();
+		assertEquals(sport.equals("basketball") ? 81 : 3, match.homeScore());
+		assertNull(match.awayScore());
+		assertEquals(status, match.status());
+		assertEquals("04:32", match.clock());
+		verify(repository).save(argThat(entry -> entry.id().startsWith("fixtures:" + sport + ":")));
+		server.verify();
 	}
 
 	@Test
@@ -55,7 +99,7 @@ class FixturesServiceTests {
 				""".formatted(match(2, 283, 1794250800, "null"), match(3, 39, 1794254400, "2"),
 						match(1, 283, 1794247200, "0")));
 
-		FixturesResponse response = service.getFixtures(DATE, ZONE);
+		FixturesResponse response = service.getFixtures("football", DATE, ZONE);
 
 		assertEquals(2, response.competitions().size());
 		assertEquals(List.of(1L, 2L), response.competitions().getFirst().matches().stream()
@@ -72,7 +116,7 @@ class FixturesServiceTests {
 	void usesFreshCacheWithoutCallingProvider() {
 		FixturesResponse cached = new FixturesResponse(List.of(), Instant.now(), false);
 		when(repository.findById(KEY)).thenReturn(Optional.of(new CachedFixtures(KEY, cached, Instant.now().plusSeconds(60))));
-		assertSame(cached, service.getFixtures(DATE, ZONE));
+		assertSame(cached, service.getFixtures("football", DATE, ZONE));
 		verify(repository, never()).save(any());
 		server.verify();
 	}
@@ -82,7 +126,7 @@ class FixturesServiceTests {
 		FixturesResponse cached = new FixturesResponse(List.of(), Instant.now().minusSeconds(7200), false);
 		when(repository.findById(KEY)).thenReturn(Optional.of(new CachedFixtures(KEY, cached, Instant.now().minusSeconds(60))));
 		expectResponse("{\"errors\":{\"requests\":\"Daily limit reached\"},\"response\":[]}");
-		FixturesResponse response = service.getFixtures(DATE, ZONE);
+		FixturesResponse response = service.getFixtures("football", DATE, ZONE);
 		assertTrue(response.stale());
 		assertEquals(cached.updatedAt(), response.updatedAt());
 		verify(repository, never()).save(any());
@@ -91,7 +135,7 @@ class FixturesServiceTests {
 	@Test
 	void reportsProviderFailureInsteadOfCachingAnEmptySchedule() {
 		expectResponse("{\"errors\":{\"plan\":\"Unavailable season\"},\"response\":[]}");
-		var error = assertThrows(ResponseStatusException.class, () -> service.getFixtures(DATE, ZONE));
+		var error = assertThrows(ResponseStatusException.class, () -> service.getFixtures("football", DATE, ZONE));
 		assertEquals(502, error.getStatusCode().value());
 		assertEquals("Planul API-Sports nu permite accesul la data selectată.", error.getReason());
 		verify(repository, never()).save(any());
@@ -102,7 +146,7 @@ class FixturesServiceTests {
 		when(repository.findById(KEY)).thenThrow(new IllegalStateException("cache unavailable"));
 		when(repository.save(any())).thenThrow(new IllegalStateException("cache unavailable"));
 		expectResponse("{\"errors\":[],\"response\":[]}");
-		assertTrue(service.getFixtures(DATE, ZONE).competitions().isEmpty());
+		assertTrue(service.getFixtures("football", DATE, ZONE).competitions().isEmpty());
 		verify(repository).save(any());
 	}
 
@@ -111,7 +155,7 @@ class FixturesServiceTests {
 		FixturesResponse response = new FixturesResponse(List.of(), Instant.now(), false);
 		String key = "fixtures:football:2026-11-10:UTC";
 		when(repository.findById(key)).thenReturn(Optional.of(new CachedFixtures(key, response, Instant.now().plusSeconds(60))));
-		assertSame(response, service.getFixtures(DATE.plusDays(1), ZoneId.of("UTC")));
+		assertSame(response, service.getFixtures("football", DATE.plusDays(1), ZoneId.of("UTC")));
 		verify(repository).findById(key);
 		server.verify();
 	}

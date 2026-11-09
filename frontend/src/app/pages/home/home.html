@@ -13,16 +13,6 @@
     </div>
   </div>
 
-  @if (!isFootball()) {
-    <div class="demo-notice">
-      <span class="demo-icon" aria-hidden="true">i</span>
-      <span
-        ><strong>Previzualizare</strong> — scorurile și echipele de mai jos sunt date demonstrative,
-        nu sunt preluate din API.</span
-      >
-    </div>
-  }
-
   <section class="schedule-section" aria-labelledby="schedule-heading">
     <div class="schedule-heading">
       <div>
@@ -66,17 +56,17 @@
     [attr.aria-busy]="schedule().loading"
     aria-live="polite"
   >
-    @if (isFootball() && schedule().loading) {
+    @if (schedule().loading) {
       <p class="demo-notice" role="status">Se încarcă programul meciurilor…</p>
-    } @else if (isFootball() && schedule().error) {
+    } @else if (schedule().error) {
       <div class="demo-notice" role="alert">
         <span>{{ schedule().error }}</span>
         <button type="button" class="retry-btn" (click)="retry()">Reîncearcă</button>
       </div>
-    } @else if (isFootball() && competitions().length === 0) {
+    } @else if (competitions().length === 0) {
       <p class="demo-notice" role="status">Nu există meciuri pentru această zi.</p>
     }
-    @if (isFootball() && schedule().data?.stale) {
+    @if (schedule().data?.stale) {
       <p class="demo-notice" role="status">
         Furnizorul este indisponibil. Se afișează ultimele date salvate.
       </p>
@@ -107,9 +97,6 @@
               </p>
             </div>
           </div>
-          @if (!isFootball()) {
-            <span class="demo-tag">DEMO</span>
-          }
         </header>
 
         @for (match of competition.matches; track match.id) {
@@ -179,13 +166,9 @@
 
   <footer class="home-footer">
     <span class="footer-live-dot"></span>
-    @if (isFootball()) {
-      API-Sports · Date actualizate cel mult o dată pe oră
-      @if (schedule().data; as data) {
-        <span class="meta-separator">·</span> Actualizat la {{ data.updatedAt | date: 'HH:mm' }}
-      }
-    } @else {
-      Design demonstrativ
+    API-Sports
+    @if (schedule().data; as data) {
+      <span class="meta-separator">·</span> Actualizat la {{ data.updatedAt | date: 'HH:mm' }}
     }
     <span class="meta-separator">·</span> Fus orar browser: {{ browserTimeZone }}
   </footer>

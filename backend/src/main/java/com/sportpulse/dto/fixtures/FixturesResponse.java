@@ -9,6 +9,6 @@ public record FixturesResponse(List<Competition> competitions, Instant updatedAt
 	}
 
 	public record Match(long id, String homeTeam, String awayTeam, String homeLogo, String awayLogo,
-			Integer homeScore, Integer awayScore, Instant kickoff, String status, Integer elapsed) {
+			Integer homeScore, Integer awayScore, Instant kickoff, String status, Integer elapsed, String clock) {
 	}
 }

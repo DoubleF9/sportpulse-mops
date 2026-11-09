@@ -24,6 +24,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sportpulse.config.ApiSportsConfig;
 import com.sportpulse.dto.apifootball.ApiFootballFixturesResponse;
+import com.sportpulse.dto.apisports.ApiSportsGamesResponse;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sportpulse.dto.fixtures.FixturesResponse;
 import com.sportpulse.model.CachedFixtures;
 import com.sportpulse.repository.CachedFixturesRepository;
@@ -44,8 +46,8 @@ public class FixturesService {
 		this.cacheRepository = cacheRepository;
 	}
 
-	public FixturesResponse getFixtures(LocalDate date, ZoneId timezone) {
-		String cacheKey = "fixtures:football:" + date + ":" + timezone.getId();
+	public FixturesResponse getFixtures(String sport, LocalDate date, ZoneId timezone) {
+		String cacheKey = "fixtures:" + sport + ":" + date + ":" + timezone.getId();
 		CachedFixtures cached = null;
 		try {
 			cached = cacheRepository.findById(cacheKey).orElse(null);
@@ -58,7 +60,7 @@ public class FixturesService {
 
 		FixturesResponse response;
 		try {
-			response = fetchFixtures(date, timezone);
+			response = fetchFixtures(sport, date, timezone);
 		} catch (Exception e) {
 			log.warn("Fixture provider request failed ({})", e.getClass().getSimpleName());
 			if (cached != null) {
@@ -78,12 +80,12 @@ public class FixturesService {
 		return response;
 	}
 
-	private FixturesResponse fetchFixtures(LocalDate date, ZoneId timezone) throws Exception {
+	private FixturesResponse fetchFixtures(String sport, LocalDate date, ZoneId timezone) throws Exception {
 		if (apiSportsConfig.getApiKey() == null || apiSportsConfig.getApiKey().isBlank()) {
 			throw new IllegalStateException("API-Sports key is missing");
 		}
-		var uri = UriComponentsBuilder.newInstance().scheme("https").host(apiSportsConfig.getFootballHost())
-				.path("/fixtures").queryParam("date", date).queryParam("timezone", timezone.getId())
+		var uri = UriComponentsBuilder.newInstance().scheme("https").host(apiSportsConfig.getHost(sport))
+				.path(sport.equals("football") ? "/fixtures" : "/games").queryParam("date", date).queryParam("timezone", timezone.getId())
 				.build().encode().toUri();
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("x-apisports-key", apiSportsConfig.getApiKey());
@@ -92,19 +94,32 @@ public class FixturesService {
 		if (raw == null) {
 			throw new IllegalStateException("Empty provider response");
 		}
-		var body = objectMapper.readValue(raw, ApiFootballFixturesResponse.class);
+		var root = objectMapper.readTree(raw);
+		validateProviderResponse(root);
+		if (!sport.equals("football")) {
+			return mapGames(objectMapper.treeToValue(root, ApiSportsGamesResponse.class), sport);
+		}
+		var body = objectMapper.treeToValue(root, ApiFootballFixturesResponse.class);
+		return mapFootball(body);
+	}
+
+	private void validateProviderResponse(JsonNode body) {
 		// API-Sports can return HTTP 200 with quota/plan errors. Never cache those as an empty schedule.
-		if (body.errors() != null && body.errors().has("plan")) {
+		var errors = body.path("errors");
+		if (errors.has("plan")) {
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
 					"Planul API-Sports nu permite accesul la data selectată.");
 		}
-		if (body.errors() != null && body.errors().has("requests")) {
+		if (errors.has("requests")) {
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
 					"Limita de cereri API-Sports a fost atinsă. Încercați din nou mai târziu.");
 		}
-		if ((body.errors() != null && !body.errors().isEmpty()) || body.response() == null) {
+		if (!errors.isEmpty() || !body.path("response").isArray()) {
 			throw new IllegalStateException("Provider returned an error");
 		}
+	}
+
+	private FixturesResponse mapFootball(ApiFootballFixturesResponse body) {
 		Map<Integer, List<ApiFootballFixturesResponse.Match>> leagues = new LinkedHashMap<>();
 		body.response().stream().sorted(Comparator.comparingLong(match -> match.fixture().timestamp()))
 				.forEach(match -> leagues.computeIfAbsent(match.league().id(), key -> new ArrayList<>()).add(match));
@@ -124,6 +139,38 @@ public class FixturesService {
 		var away = match.teams().away();
 		return new FixturesResponse.Match(fixture.id(), home.name(), away.name(), home.logo(), away.logo(),
 				match.goals() == null ? null : match.goals().home(), match.goals() == null ? null : match.goals().away(),
-				Instant.ofEpochSecond(fixture.timestamp()), fixture.status().code(), fixture.status().elapsed());
+				Instant.ofEpochSecond(fixture.timestamp()), fixture.status().code(), fixture.status().elapsed(), null);
+	}
+
+	private FixturesResponse mapGames(ApiSportsGamesResponse body, String sport) {
+		Map<Integer, List<ApiSportsGamesResponse.Game>> leagues = new LinkedHashMap<>();
+		body.response().stream().sorted(Comparator.comparingLong(ApiSportsGamesResponse.Game::timestamp))
+				.forEach(game -> leagues.computeIfAbsent(game.league().id(), key -> new ArrayList<>()).add(game));
+		List<FixturesResponse.Competition> competitions = new ArrayList<>();
+		for (var games : leagues.values()) {
+			var first = games.getFirst();
+			var league = first.league();
+			var matches = games.stream().map(game -> mapGame(game, sport)).toList();
+			competitions.add(new FixturesResponse.Competition(league.id(), league.name(),
+					first.country() == null ? null : first.country().name(), league.logo(),
+					first.week() == null ? first.stage() : first.week(), matches));
+		}
+		return new FixturesResponse(competitions, Instant.now(), false);
+	}
+
+	private FixturesResponse.Match mapGame(ApiSportsGamesResponse.Game game, String sport) {
+		var home = game.teams().home();
+		var away = game.teams().away();
+		var scores = game.scores();
+		return new FixturesResponse.Match(game.id(), home.name(), away.name(), home.logo(), away.logo(),
+				score(scores, "home", sport), score(scores, "away", sport), Instant.ofEpochSecond(game.timestamp()),
+				game.status().code(), null, game.status().timer() == null ? game.timer() : game.status().timer());
+	}
+
+	private Integer score(JsonNode scores, String side, String sport) {
+		if (scores == null) return null;
+		var value = scores.path(side);
+		if (sport.equals("basketball")) value = value.path("total");
+		return value.isIntegralNumber() ? value.intValue() : null;
 	}
 }

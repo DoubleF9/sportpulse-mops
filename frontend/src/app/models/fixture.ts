@@ -9,6 +9,7 @@ export interface Fixture {
   kickoff: string;
   status: string;
   elapsed: number | null;
+  clock?: string | null;
 }
 
 export interface FixtureCompetition {

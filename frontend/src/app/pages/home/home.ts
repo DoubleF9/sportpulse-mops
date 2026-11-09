@@ -5,14 +5,11 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SPORTS } from '../../models/sport';
-import type { Sport } from '../../models/sport';
-import { Fixture, FixturesResponse } from '../../models/fixture';
+import { FixturesResponse } from '../../models/fixture';
+import { MatchStatus, presentFixture } from '../../models/match-presentation';
 import { FixturesService } from '../../services/fixtures.service';
 import { HealthService } from '../../services/health.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
-
-type ScheduleMatchStatus =
-  'live' | 'scheduled' | 'finished' | 'postponed' | 'cancelled' | 'interrupted' | 'unknown';
 
 interface ScheduleState {
   loading: boolean;
@@ -31,7 +28,7 @@ interface ScheduleMatch {
   homeScore: number | null;
   awayScore: number | null;
   time: string;
-  status: ScheduleMatchStatus;
+  status: MatchStatus;
 }
 
 interface ScheduleCompetition {
@@ -42,94 +39,6 @@ interface ScheduleCompetition {
   round: string | null;
   matches: ScheduleMatch[];
 }
-
-const DEMO_COMPETITIONS: Record<Sport, ScheduleCompetition[]> = {
-  football: [],
-  basketball: [
-    {
-      name: 'Liga demonstrativă',
-      country: 'România',
-      round: 'Etapa 8',
-      matches: [
-        {
-          id: 'basketball-live',
-          homeTeam: 'Baschet Nord',
-          awayTeam: 'Baschet Sud',
-          homeMark: 'N',
-          awayMark: 'S',
-          homeScore: 78,
-          awayScore: 74,
-          time: 'Q4 04:32',
-          status: 'live',
-        },
-        {
-          id: 'basketball-scheduled',
-          homeTeam: 'Atletic Verde',
-          awayTeam: 'Sportul Albastru',
-          homeMark: 'V',
-          awayMark: 'A',
-          homeScore: null,
-          awayScore: null,
-          time: '20:00',
-          status: 'scheduled',
-        },
-        {
-          id: 'basketball-finished',
-          homeTeam: 'Dunărea BC',
-          awayTeam: 'Olimpic City',
-          homeMark: 'D',
-          awayMark: 'O',
-          homeScore: 91,
-          awayScore: 86,
-          time: 'Final',
-          status: 'finished',
-        },
-      ],
-    },
-  ],
-  hockey: [
-    {
-      name: 'Liga demonstrativă',
-      country: 'România',
-      round: 'Etapa 5',
-      matches: [
-        {
-          id: 'hockey-live',
-          homeTeam: 'Lupii Nordului',
-          awayTeam: 'Vulturii Sudului',
-          homeMark: 'L',
-          awayMark: 'V',
-          homeScore: 3,
-          awayScore: 2,
-          time: '2P 08:14',
-          status: 'live',
-        },
-        {
-          id: 'hockey-scheduled',
-          homeTeam: 'Atletic Verde',
-          awayTeam: 'Sportul Albastru',
-          homeMark: 'V',
-          awayMark: 'A',
-          homeScore: null,
-          awayScore: null,
-          time: '19:30',
-          status: 'scheduled',
-        },
-        {
-          id: 'hockey-finished',
-          homeTeam: 'Dunărea HC',
-          awayTeam: 'Olimpic City',
-          homeMark: 'D',
-          awayMark: 'O',
-          homeScore: 4,
-          awayScore: 2,
-          time: 'Final',
-          status: 'finished',
-        },
-      ],
-    },
-  ],
-};
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -176,7 +85,6 @@ export class Home {
     ),
   );
   protected readonly browserTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  protected readonly isFootball = computed(() => this.selectedSport() === 'football');
   private readonly request = computed(() => ({
     sport: this.selectedSport(),
     date: this.dateInputValue(),
@@ -185,33 +93,30 @@ export class Home {
   protected readonly schedule = toSignal(
     toObservable(this.request).pipe(
       switchMap(({ sport, date }) =>
-        sport === 'football'
-          ? this.fixturesService.getFixtures(date, this.browserTimeZone).pipe(
-              map((data): ScheduleState => ({ loading: false, error: null, data })),
-              startWith<ScheduleState>({ loading: true, error: null, data: null }),
-              catchError((error: HttpErrorResponse) =>
-                of<ScheduleState>({
-                  loading: false,
-                  error:
-                    typeof error.error?.detail === 'string'
-                      ? error.error.detail
-                      : 'Programul meciurilor nu este disponibil momentan. Încercați din nou mai târziu.',
-                  data: null,
-                }),
-              ),
-            )
-          : of<ScheduleState>({ loading: false, error: null, data: null }),
+        this.fixturesService.getFixtures(date, this.browserTimeZone, sport).pipe(
+          map((data): ScheduleState => ({ loading: false, error: null, data })),
+          startWith<ScheduleState>({ loading: true, error: null, data: null }),
+          catchError((error: HttpErrorResponse) =>
+            of<ScheduleState>({
+              loading: false,
+              error:
+                typeof error.error?.detail === 'string'
+                  ? error.error.detail
+                  : 'Programul meciurilor nu este disponibil momentan. Încercați din nou mai târziu.',
+              data: null,
+            }),
+          ),
+        ),
       ),
     ),
     { initialValue: { loading: true, error: null, data: null } as ScheduleState },
   );
   protected readonly competitions = computed<ScheduleCompetition[]>(() => {
-    if (!this.isFootball()) {
-      return DEMO_COMPETITIONS[this.selectedSport()];
-    }
     return (this.schedule().data?.competitions ?? []).map((competition) => ({
       ...competition,
-      matches: competition.matches.map((match) => this.mapFixture(match)),
+      matches: competition.matches.map((match) =>
+        presentFixture(match, this.selectedSport(), this.browserTimeZone),
+      ),
     }));
   });
 
@@ -269,40 +174,7 @@ export class Home {
     return new Intl.DateTimeFormat('ro-RO', { weekday: 'short', day: 'numeric' }).format(date);
   }
 
-  private mapFixture(match: Fixture): ScheduleMatch {
-    const live = ['1H', 'HT', '2H', 'ET', 'BT', 'P', 'LIVE'].includes(match.status);
-    let status: ScheduleMatchStatus = 'unknown';
-    if (live) status = 'live';
-    else if (['FT', 'AET', 'PEN', 'AWD', 'WO'].includes(match.status)) status = 'finished';
-    else if (['NS', 'TBD'].includes(match.status)) status = 'scheduled';
-    else if (match.status === 'PST') status = 'postponed';
-    else if (['CANC', 'ABD'].includes(match.status)) status = 'cancelled';
-    else if (['SUSP', 'INT'].includes(match.status)) status = 'interrupted';
-
-    const time =
-      match.status === 'HT'
-        ? 'Pauză'
-        : live
-          ? match.elapsed === null
-            ? 'LIVE'
-            : `${match.elapsed}'`
-          : match.status === 'TBD'
-            ? 'Ora neconfirmată'
-            : new Intl.DateTimeFormat('ro-RO', {
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: this.browserTimeZone,
-              }).format(new Date(match.kickoff));
-    return {
-      ...match,
-      time,
-      status,
-      homeMark: match.homeTeam.slice(0, 3).toUpperCase(),
-      awayMark: match.awayTeam.slice(0, 3).toUpperCase(),
-    };
-  }
-
-  protected statusLabel(status: ScheduleMatchStatus): string {
+  protected statusLabel(status: MatchStatus): string {
     if (status === 'live') {
       return 'LIVE';
     }

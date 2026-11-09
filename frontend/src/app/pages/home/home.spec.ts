@@ -121,15 +121,26 @@ describe('Home schedule', () => {
     expect(body().textContent).toContain('Home FC');
   });
 
-  it('keeps other sports clearly labelled as previews and does not request football fixtures', () => {
-    const pending = scheduleRequest();
-    sport.set('basketball');
-    TestBed.tick();
-    expect(pending.cancelled).toBe(true);
-    expect(body().textContent).toContain('Baschet Nord');
-    expect(body().textContent).toContain('Previzualizare');
-    http.expectNone((request) => request.url === '/api/fixtures');
-  });
+  it.each(['basketball', 'hockey'] as const)(
+    'loads real %s matches and keeps date navigation working',
+    (selected) => {
+      const pending = scheduleRequest();
+      sport.set(selected);
+      TestBed.tick();
+      expect(pending.cancelled).toBe(true);
+      const loaded = scheduleRequest();
+      expect(loaded.request.params.get('sport')).toBe(selected);
+      loaded.flush(response());
+      fixture.detectChanges();
+      expect(body().textContent).toContain('Home FC');
+      expect(body().textContent).not.toContain('Previzualizare');
+      chooseDay(4);
+      const tomorrow = scheduleRequest();
+      expect(tomorrow.request.params.get('sport')).toBe(selected);
+      expect(tomorrow.request.params.get('date')).not.toBe(loaded.request.params.get('date'));
+      tomorrow.flush({ ...response(), competitions: [] });
+    },
+  );
 
   it('explains when the provider plan does not allow the selected date', () => {
     scheduleRequest().flush(
