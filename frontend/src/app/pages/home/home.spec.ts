@@ -3,6 +3,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { FixturesResponse } from '../../models/fixture';
 import { Sport } from '../../models/sport';
@@ -167,6 +168,26 @@ describe('Home schedule', () => {
     calendar.dispatchEvent(new Event('change'));
     TestBed.tick();
     http.expectNone((request) => request.url === '/api/fixtures');
+  });
+
+  it('opens the date picker from the Calendar button and keeps a visible keyboard fallback', () => {
+    scheduleRequest().flush(response());
+    const calendar = body().querySelector<HTMLInputElement>('input[type=date]')!;
+    const showPicker = vi.fn();
+    Object.defineProperty(calendar, 'showPicker', { configurable: true, value: showPicker });
+    const button = body().querySelector<HTMLButtonElement>('button.calendar-btn');
+    expect(button).not.toBeNull();
+    button!.click();
+    expect(showPicker).toHaveBeenCalledOnce();
+    expect(calendar.classList.contains('calendar-input')).toBe(true);
+    Object.defineProperty(calendar, 'showPicker', {
+      configurable: true,
+      value: () => {
+        throw new DOMException();
+      },
+    });
+    button!.click();
+    expect(document.activeElement).toBe(calendar);
   });
 
   it('distinguishes postponed, halftime and cancelled matches and displays stale-data warnings', () => {

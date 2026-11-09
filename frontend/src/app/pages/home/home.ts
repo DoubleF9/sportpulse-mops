@@ -140,6 +140,15 @@ export class Home {
     this.reload.update((attempt) => attempt + 1);
   }
 
+  protected openCalendar(input: HTMLInputElement): void {
+    input.focus();
+    try {
+      input.showPicker?.();
+    } catch {
+      // Keep the visible date input focused when the native picker cannot be opened.
+    }
+  }
+
   protected hideBrokenImage(event: Event): void {
     (event.target as HTMLImageElement).hidden = true;
   }

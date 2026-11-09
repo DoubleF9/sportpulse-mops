@@ -133,6 +133,14 @@ class FixturesServiceTests {
 	}
 
 	@Test
+	void includesTheProvidersAllowedDateRangeWithoutExposingArbitraryText() {
+		expectResponse("{\"errors\":{\"plan\":\"Free plans do not have access to this date, try from 2026-11-08 to 2026-11-10.\"},\"response\":[]}");
+		var error = assertThrows(ResponseStatusException.class, () -> service.getFixtures("football", DATE, ZONE));
+		assertEquals("Planul API-Sports nu permite accesul la data selectată. Date disponibile: 08.11.2026 – 10.11.2026.", error.getReason());
+		verify(repository, never()).save(any());
+	}
+
+	@Test
 	void reportsProviderFailureInsteadOfCachingAnEmptySchedule() {
 		expectResponse("{\"errors\":{\"plan\":\"Unavailable season\"},\"response\":[]}");
 		var error = assertThrows(ResponseStatusException.class, () -> service.getFixtures("football", DATE, ZONE));

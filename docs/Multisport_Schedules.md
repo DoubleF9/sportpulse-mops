@@ -19,6 +19,10 @@ Contribuie la SCRUM-8 (selecția sportului), SCRUM-9 (program zilnic) și SCRUM-
 5. Reîncărcați pagina. Așteptat: sportul ales este păstrat; solicitarea poate reutiliza datele din cache.
 6. Selectați o zi nepermisă de planul API. Așteptat: mesaj explicit de restricție, fără meciuri demonstrative sau rezultate rămase din ziua precedentă.
 
+Butonul Calendar deschide explicit selectorul nativ al browserului. Câmpul de dată rămâne vizibil și poate fi folosit direct, inclusiv din tastatură, dacă browserul nu permite deschiderea programatică.
+
+Intervalul permis de plan se poate modifica în timp. Mesajul de eroare afișează datele comunicate de furnizor. La verificarea din seara de 09.11, furnizorul permitea 08–10.11 pentru toate cele trei sporturi. O zi mai veche poate rămâne vizibilă dacă avem o copie salvată; aceasta este marcată ca neactualizată și include data și ora salvării. Disponibilitatea unei copii pentru fotbal nu implică existența uneia pentru celelalte sporturi.
+
 ## Verificări automate și utilizarea AI
 
 Testele acoperă scorurile și ceasurile diferite între furnizori, validarea sportului, separarea cache-urilor, schimbarea sportului/datei și statusurile specifice. Înaintea implementării, cele două teste de integrare Angular pentru încărcarea baschetului și hocheiului au eșuat deoarece aplicația nu solicita date reale pentru aceste sporturi; după implementare trec.

@@ -3,12 +3,15 @@ package com.sportpulse.service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +37,7 @@ import com.sportpulse.repository.CachedFixturesRepository;
 public class FixturesService {
 
 	private static final Logger log = LoggerFactory.getLogger(FixturesService.class);
+	private static final Pattern PLAN_DATE_RANGE = Pattern.compile("try from (\\d{4}-\\d{2}-\\d{2}) to (\\d{4}-\\d{2}-\\d{2})");
 	private final RestTemplate restTemplate;
 	private final ApiSportsConfig apiSportsConfig;
 	private final CachedFixturesRepository cacheRepository;
@@ -107,8 +111,7 @@ public class FixturesService {
 		// API-Sports can return HTTP 200 with quota/plan errors. Never cache those as an empty schedule.
 		var errors = body.path("errors");
 		if (errors.has("plan")) {
-			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-					"Planul API-Sports nu permite accesul la data selectată.");
+			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, planRestriction(errors.path("plan").asText()));
 		}
 		if (errors.has("requests")) {
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
@@ -117,6 +120,21 @@ public class FixturesService {
 		if (!errors.isEmpty() || !body.path("response").isArray()) {
 			throw new IllegalStateException("Provider returned an error");
 		}
+	}
+
+	private String planRestriction(String providerMessage) {
+		String message = "Planul API-Sports nu permite accesul la data selectată.";
+		var range = PLAN_DATE_RANGE.matcher(providerMessage);
+		if (range.find()) {
+			try {
+				var format = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+				return message + " Date disponibile: " + LocalDate.parse(range.group(1)).format(format)
+						+ " – " + LocalDate.parse(range.group(2)).format(format) + ".";
+			} catch (DateTimeParseException e) {
+				// Do not expose arbitrary provider text if it does not contain a valid date range.
+			}
+		}
+		return message;
 	}
 
 	private FixturesResponse mapFootball(ApiFootballFixturesResponse body) {

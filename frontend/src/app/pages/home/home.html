@@ -35,10 +35,20 @@
           <small>{{ offset === 0 ? 'Program' : offset < 0 ? 'Rezultate' : 'Meciuri' }}</small>
         </button>
       }
-      <label class="calendar-btn">
-        <span aria-hidden="true">▦</span>
-        <span>Calendar</span>
+      <div class="calendar-control">
+        <button
+          type="button"
+          class="calendar-btn"
+          (click)="openCalendar(calendarInput)"
+          aria-controls="schedule-date"
+        >
+          <span aria-hidden="true">▦</span>
+          <span>Calendar</span>
+        </button>
         <input
+          #calendarInput
+          id="schedule-date"
+          class="calendar-input"
           type="date"
           aria-label="Alege o dată, în intervalul de 7 zile"
           [min]="minDate"
@@ -46,7 +56,7 @@
           [value]="dateInputValue()"
           (change)="onDateChange($event)"
         />
-      </label>
+      </div>
     </div>
   </section>
 
@@ -68,7 +78,8 @@
     }
     @if (schedule().data?.stale) {
       <p class="demo-notice" role="status">
-        Furnizorul este indisponibil. Se afișează ultimele date salvate.
+        Programul nu a putut fi actualizat. Se afișează ultimele date salvate la
+        {{ schedule().data?.updatedAt | date: 'dd.MM.yyyy HH:mm' }}.
       </p>
     }
     @for (competition of competitions(); track competition.id ?? competition.name) {
