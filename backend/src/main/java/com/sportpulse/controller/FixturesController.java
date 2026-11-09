@@ -30,14 +30,18 @@ public class FixturesController {
 	@GetMapping
 	public FixturesResponse getFixtures(
 			@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
+			@RequestParam(defaultValue = "football") String sport,
 			@RequestParam(defaultValue = "UTC") String timezone) {
+		if (!java.util.Set.of("football", "basketball", "hockey").contains(sport)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sport invalid.");
+		}
 		ZoneId zone;
 		try {
 			zone = ZoneId.of(timezone);
 		} catch (DateTimeException e) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Fus orar invalid.");
 		}
-		return fixturesService.getFixtures(date, zone);
+		return fixturesService.getFixtures(sport, date, zone);
 	}
 
 	@ExceptionHandler(ResponseStatusException.class)

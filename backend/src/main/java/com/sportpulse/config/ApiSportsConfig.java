@@ -15,6 +15,12 @@ public class ApiSportsConfig {
 	@Value("${apisports.football.host:v3.football.api-sports.io}")
 	private String footballHost;
 
+	@Value("${apisports.basketball.host:v1.basketball.api-sports.io}")
+	private String basketballHost;
+
+	@Value("${apisports.hockey.host:v1.hockey.api-sports.io}")
+	private String hockeyHost;
+
 	@Bean
 	public RestTemplate restTemplate() {
 		var factory = new SimpleClientHttpRequestFactory();
@@ -29,5 +35,14 @@ public class ApiSportsConfig {
 
 	public String getFootballHost() {
 		return footballHost;
+	}
+
+	public String getHost(String sport) {
+		return switch (sport) {
+			case "football" -> footballHost;
+			case "basketball" -> basketballHost;
+			case "hockey" -> hockeyHost;
+			default -> throw new IllegalArgumentException("Unsupported sport");
+		};
 	}
 }

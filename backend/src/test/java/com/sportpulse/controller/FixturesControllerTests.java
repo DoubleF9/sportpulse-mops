@@ -31,7 +31,7 @@ class FixturesControllerTests {
 
 	@Test
 	void forwardsDateAndTimezoneAndSerializesMetadata() throws Exception {
-		when(service.getFixtures(LocalDate.of(2026, 11, 9), ZoneId.of("Europe/Bucharest")))
+		when(service.getFixtures("football", LocalDate.of(2026, 11, 9), ZoneId.of("Europe/Bucharest")))
 				.thenReturn(new FixturesResponse(List.of(), Instant.parse("2026-11-08T22:00:00Z"), false));
 		mockMvc.perform(get("/api/fixtures").param("date", "2026-11-09").param("timezone", "Europe/Bucharest"))
 				.andExpect(status().isOk()).andExpect(jsonPath("$.competitions").isEmpty())
@@ -41,7 +41,7 @@ class FixturesControllerTests {
 
 	@Test
 	void returnsAnActionableProviderError() throws Exception {
-		when(service.getFixtures(LocalDate.of(2026, 11, 9), ZoneId.of("UTC")))
+		when(service.getFixtures("football", LocalDate.of(2026, 11, 9), ZoneId.of("UTC")))
 				.thenThrow(new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Planul API-Sports nu permite accesul la data selectată."));
 		mockMvc.perform(get("/api/fixtures").param("date", "2026-11-09"))
 				.andExpect(status().isBadGateway())
@@ -50,10 +50,21 @@ class FixturesControllerTests {
 
 	@Test
 	void rejectsInvalidDateOrTimezoneBeforeCallingProvider() throws Exception {
+		mockMvc.perform(get("/api/fixtures").param("date", "2026-11-09").param("sport", "invalid"))
+				.andExpect(status().isBadRequest());
 		mockMvc.perform(get("/api/fixtures").param("date", "invalid")).andExpect(status().isBadRequest());
 		mockMvc.perform(get("/api/fixtures").param("date", "2026-11-09").param("timezone", "invalid"))
 				.andExpect(status().isBadRequest());
 		mockMvc.perform(get("/api/fixtures")).andExpect(status().isBadRequest());
 		verifyNoInteractions(service);
+	}
+
+	@Test
+	void forwardsTheSelectedSport() throws Exception {
+		when(service.getFixtures("hockey", LocalDate.of(2026, 11, 9), ZoneId.of("UTC")))
+				.thenReturn(new FixturesResponse(List.of(), Instant.now(), false));
+		mockMvc.perform(get("/api/fixtures").param("date", "2026-11-09").param("sport", "hockey"))
+				.andExpect(status().isOk());
+		verify(service).getFixtures("hockey", LocalDate.of(2026, 11, 9), ZoneId.of("UTC"));
 	}
 }

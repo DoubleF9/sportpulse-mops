@@ -3,6 +3,7 @@ import { HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
 import { FixturesResponse } from '../../models/fixture';
 import { Sport } from '../../models/sport';
@@ -121,15 +122,26 @@ describe('Home schedule', () => {
     expect(body().textContent).toContain('Home FC');
   });
 
-  it('keeps other sports clearly labelled as previews and does not request football fixtures', () => {
-    const pending = scheduleRequest();
-    sport.set('basketball');
-    TestBed.tick();
-    expect(pending.cancelled).toBe(true);
-    expect(body().textContent).toContain('Baschet Nord');
-    expect(body().textContent).toContain('Previzualizare');
-    http.expectNone((request) => request.url === '/api/fixtures');
-  });
+  it.each(['basketball', 'hockey'] as const)(
+    'loads real %s matches and keeps date navigation working',
+    (selected) => {
+      const pending = scheduleRequest();
+      sport.set(selected);
+      TestBed.tick();
+      expect(pending.cancelled).toBe(true);
+      const loaded = scheduleRequest();
+      expect(loaded.request.params.get('sport')).toBe(selected);
+      loaded.flush(response());
+      fixture.detectChanges();
+      expect(body().textContent).toContain('Home FC');
+      expect(body().textContent).not.toContain('Previzualizare');
+      chooseDay(4);
+      const tomorrow = scheduleRequest();
+      expect(tomorrow.request.params.get('sport')).toBe(selected);
+      expect(tomorrow.request.params.get('date')).not.toBe(loaded.request.params.get('date'));
+      tomorrow.flush({ ...response(), competitions: [] });
+    },
+  );
 
   it('explains when the provider plan does not allow the selected date', () => {
     scheduleRequest().flush(
@@ -156,6 +168,26 @@ describe('Home schedule', () => {
     calendar.dispatchEvent(new Event('change'));
     TestBed.tick();
     http.expectNone((request) => request.url === '/api/fixtures');
+  });
+
+  it('opens the date picker from the Calendar button and keeps a visible keyboard fallback', () => {
+    scheduleRequest().flush(response());
+    const calendar = body().querySelector<HTMLInputElement>('input[type=date]')!;
+    const showPicker = vi.fn();
+    Object.defineProperty(calendar, 'showPicker', { configurable: true, value: showPicker });
+    const button = body().querySelector<HTMLButtonElement>('button.calendar-btn');
+    expect(button).not.toBeNull();
+    button!.click();
+    expect(showPicker).toHaveBeenCalledOnce();
+    expect(calendar.classList.contains('calendar-input')).toBe(true);
+    Object.defineProperty(calendar, 'showPicker', {
+      configurable: true,
+      value: () => {
+        throw new DOMException();
+      },
+    });
+    button!.click();
+    expect(document.activeElement).toBe(calendar);
   });
 
   it('distinguishes postponed, halftime and cancelled matches and displays stale-data warnings', () => {
