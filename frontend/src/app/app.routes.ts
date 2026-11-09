@@ -9,6 +9,11 @@ export const routes: Routes = [
   },
   {
     path: 'matches/:id',
+    redirectTo: 'matches/football/:id',
+    pathMatch: 'full',
+  },
+  {
+    path: 'matches/:sport/:id',
     title: 'Meci | SportPulse',
     loadComponent: () => import('./pages/match-details/match-details').then((m) => m.MatchDetails),
   },

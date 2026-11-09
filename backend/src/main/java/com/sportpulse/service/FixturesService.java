@@ -3,32 +3,24 @@ package com.sportpulse.service;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.util.UriComponentsBuilder;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sportpulse.config.ApiSportsConfig;
+import com.sportpulse.client.ApiSportsClient;
 import com.sportpulse.dto.apifootball.ApiFootballFixturesResponse;
 import com.sportpulse.dto.apisports.ApiSportsGamesResponse;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.sportpulse.dto.fixtures.FixturesResponse;
 import com.sportpulse.model.CachedFixtures;
 import com.sportpulse.repository.CachedFixturesRepository;
@@ -37,16 +29,12 @@ import com.sportpulse.repository.CachedFixturesRepository;
 public class FixturesService {
 
 	private static final Logger log = LoggerFactory.getLogger(FixturesService.class);
-	private static final Pattern PLAN_DATE_RANGE = Pattern.compile("try from (\\d{4}-\\d{2}-\\d{2}) to (\\d{4}-\\d{2}-\\d{2})");
-	private final RestTemplate restTemplate;
-	private final ApiSportsConfig apiSportsConfig;
+	private final ApiSportsClient client;
 	private final CachedFixturesRepository cacheRepository;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	public FixturesService(RestTemplate restTemplate, ApiSportsConfig apiSportsConfig,
-			CachedFixturesRepository cacheRepository) {
-		this.restTemplate = restTemplate;
-		this.apiSportsConfig = apiSportsConfig;
+	public FixturesService(ApiSportsClient client, CachedFixturesRepository cacheRepository) {
+		this.client = client;
 		this.cacheRepository = cacheRepository;
 	}
 
@@ -85,56 +73,15 @@ public class FixturesService {
 	}
 
 	private FixturesResponse fetchFixtures(String sport, LocalDate date, ZoneId timezone) throws Exception {
-		if (apiSportsConfig.getApiKey() == null || apiSportsConfig.getApiKey().isBlank()) {
-			throw new IllegalStateException("API-Sports key is missing");
-		}
-		var uri = UriComponentsBuilder.newInstance().scheme("https").host(apiSportsConfig.getHost(sport))
-				.path(sport.equals("football") ? "/fixtures" : "/games").queryParam("date", date).queryParam("timezone", timezone.getId())
-				.build().encode().toUri();
-		HttpHeaders headers = new HttpHeaders();
-		headers.set("x-apisports-key", apiSportsConfig.getApiKey());
-		headers.set("Accept", "application/json");
-		String raw = restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<Void>(headers), String.class).getBody();
-		if (raw == null) {
-			throw new IllegalStateException("Empty provider response");
-		}
-		var root = objectMapper.readTree(raw);
-		validateProviderResponse(root);
+		Map<String, Object> parameters = new LinkedHashMap<>();
+		parameters.put("date", date);
+		parameters.put("timezone", timezone.getId());
+		var root = client.get(sport, sport.equals("football") ? "/fixtures" : "/games", parameters);
 		if (!sport.equals("football")) {
 			return mapGames(objectMapper.treeToValue(root, ApiSportsGamesResponse.class), sport);
 		}
 		var body = objectMapper.treeToValue(root, ApiFootballFixturesResponse.class);
 		return mapFootball(body);
-	}
-
-	private void validateProviderResponse(JsonNode body) {
-		// API-Sports can return HTTP 200 with quota/plan errors. Never cache those as an empty schedule.
-		var errors = body.path("errors");
-		if (errors.has("plan")) {
-			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, planRestriction(errors.path("plan").asText()));
-		}
-		if (errors.has("requests")) {
-			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-					"Limita de cereri API-Sports a fost atinsă. Încercați din nou mai târziu.");
-		}
-		if (!errors.isEmpty() || !body.path("response").isArray()) {
-			throw new IllegalStateException("Provider returned an error");
-		}
-	}
-
-	private String planRestriction(String providerMessage) {
-		String message = "Planul API-Sports nu permite accesul la data selectată.";
-		var range = PLAN_DATE_RANGE.matcher(providerMessage);
-		if (range.find()) {
-			try {
-				var format = DateTimeFormatter.ofPattern("dd.MM.uuuu");
-				return message + " Date disponibile: " + LocalDate.parse(range.group(1)).format(format)
-						+ " – " + LocalDate.parse(range.group(2)).format(format) + ".";
-			} catch (DateTimeParseException e) {
-				// Do not expose arbitrary provider text if it does not contain a valid date range.
-			}
-		}
-		return message;
 	}
 
 	private FixturesResponse mapFootball(ApiFootballFixturesResponse body) {

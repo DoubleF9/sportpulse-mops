@@ -4,6 +4,7 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { provideRouter } from '@angular/router';
 
 import { FixturesResponse } from '../../models/fixture';
 import { Sport } from '../../models/sport';
@@ -22,6 +23,7 @@ describe('Home schedule', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
+        provideRouter([]),
         { provide: SportSelectionService, useValue: { selectedSport: sport } },
       ],
     });
@@ -206,6 +208,9 @@ describe('Home schedule', () => {
     expect(body().textContent).toContain('Liga I');
     expect(body().querySelector('.demo-tag')).toBeNull();
     expect(body().querySelectorAll('.match-result span')[0].textContent).toBe('–');
+    expect(body().querySelector<HTMLAnchorElement>('a.match-row')?.getAttribute('href')).toBe(
+      '/matches/football/1',
+    );
   });
 
   it('loads the selected date and cancels a superseded request', () => {
