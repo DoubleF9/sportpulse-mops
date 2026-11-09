@@ -42,7 +42,7 @@ class FixturesServiceTests {
 	void setUp() {
 		RestTemplate restTemplate = new RestTemplate();
 		server = MockRestServiceServer.createServer(restTemplate);
-		service = new FixturesService(new ApiSportsClient(restTemplate, config), repository);
+		service = new FixturesService(new ApiSportsClient(restTemplate, config, mock(ApiRequestUsageService.class)), repository);
 		when(config.getHost("football")).thenReturn("v3.football.api-sports.io");
 		when(config.getApiKey()).thenReturn("test-key");
 	}

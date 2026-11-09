@@ -12,12 +12,14 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sportpulse.config.ApiSportsConfig;
+import com.sportpulse.service.ApiRequestUsageService;
 
 @Component
 public class ApiSportsClient {
@@ -25,11 +27,13 @@ public class ApiSportsClient {
 	private static final Pattern PLAN_DATE_RANGE = Pattern.compile("try from (\\d{4}-\\d{2}-\\d{2}) to (\\d{4}-\\d{2}-\\d{2})");
 	private final RestTemplate restTemplate;
 	private final ApiSportsConfig config;
+	private final ApiRequestUsageService usage;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	public ApiSportsClient(RestTemplate restTemplate, ApiSportsConfig config) {
+	public ApiSportsClient(RestTemplate restTemplate, ApiSportsConfig config, ApiRequestUsageService usage) {
 		this.restTemplate = restTemplate;
 		this.config = config;
+		this.usage = usage;
 	}
 
 	public JsonNode get(String sport, String path, Map<String, ?> parameters) throws Exception {
@@ -41,8 +45,14 @@ public class ApiSportsClient {
 		HttpHeaders headers = new HttpHeaders();
 		headers.set("x-apisports-key", config.getApiKey());
 		headers.set("Accept", "application/json");
-		String raw = restTemplate.exchange(builder.build().encode().toUri(), HttpMethod.GET,
-				new HttpEntity<Void>(headers), String.class).getBody();
+		var uri = builder.build().encode().toUri();
+		usage.recordRequest(sport);
+		String raw;
+		try {
+			raw = restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<Void>(headers), String.class).getBody();
+		} catch (HttpClientErrorException.TooManyRequests e) {
+			throw quotaExceeded();
+		}
 		if (raw == null) throw new IllegalStateException("Empty provider response");
 		var root = objectMapper.readTree(raw);
 		validate(root);
@@ -56,8 +66,7 @@ public class ApiSportsClient {
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, planRestriction(errors.path("plan").asText()));
 		}
 		if (errors.has("requests")) {
-			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY,
-					"Limita de cereri API-Sports a fost atinsă. Încercați din nou mai târziu.");
+			throw quotaExceeded();
 		}
 		if (!errors.isEmpty() || !body.path("response").isArray()) {
 			throw new IllegalStateException("Provider returned an error");
@@ -77,5 +86,10 @@ public class ApiSportsClient {
 			}
 		}
 		return message;
+	}
+
+	private ResponseStatusException quotaExceeded() {
+		return new ResponseStatusException(HttpStatus.BAD_GATEWAY,
+				"Limita de cereri API-Sports a fost atinsă. Încercați din nou mai târziu.");
 	}
 }

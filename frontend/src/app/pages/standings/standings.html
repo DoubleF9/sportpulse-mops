@@ -1,9 +1,14 @@
-<section class="standings-page">
+<section class="standings-page" [attr.aria-busy]="state().loading">
   <div class="page-heading">
     <div>
-      <p class="eyebrow">SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}</p>
+      <p class="eyebrow">
+        SPORTPULSE <span class="eyebrow-line"></span> {{ selectedSportLabel() }}
+      </p>
       <h1>Clasamente</h1>
       <p class="page-subtitle">Clasamentul competițiilor pentru sportul selectat.</p>
+      @if (selectedSport() === 'football') {
+        <p class="page-subtitle">Fotbal · Sezonul 2023</p>
+      }
     </div>
     <div class="backend-indicator" [class.backend-up]="backendStatus() === 'UP'">
       <span class="backend-dot"></span>
@@ -11,22 +16,38 @@
     </div>
   </div>
 
-  <div class="demo-notice">
-    <span class="demo-icon" aria-hidden="true">i</span>
-    <span><strong>Previzualizare</strong> — clasamentele de mai jos sunt date demonstrative, nu sunt preluate din API.</span>
-  </div>
+  @if (state().loading) {
+    <p class="data-notice" role="status">Se încarcă clasamentul…</p>
+  } @else if (state().error; as error) {
+    <div class="data-notice" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" (click)="retry()">Reîncearcă</button>
+    </div>
+  } @else if (state().data; as data) {
+    @if (data.stale) {
+      <p class="data-notice" role="status">
+        Datele nu au putut fi actualizate. Se afișează ultimele date salvate.
+      </p>
+    }
+    <p class="page-subtitle">Actualizat la {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</p>
+    @if (!data.standings.length) {
+      <p class="data-notice" role="status">Nu există date de clasament pentru selecția curentă.</p>
+    }
+  }
 
-  @for (competition of standingsData(); track competition.name) {
+  @for (competition of standingsData(); track $index) {
     <section class="standings-section" aria-labelledby="league-{{ $index }}">
       <div class="standings-heading">
         <div class="league-identity">
           <div class="league-mark" aria-hidden="true">✦</div>
           <div>
             <h2 id="league-{{ $index }}">{{ competition.name }}</h2>
-            <p>{{ competition.country }} <span class="meta-separator">·</span> {{ competition.group ? competition.group : 'Clasament general' }}</p>
+            <p>
+              {{ competition.country }} <span class="meta-separator">·</span>
+              {{ competition.group ? competition.group : 'Clasament general' }}
+            </p>
           </div>
         </div>
-        <span class="demo-tag">DEMO</span>
       </div>
 
       <div class="standings-table-wrapper">
@@ -48,7 +69,12 @@
           </thead>
           <tbody>
             @for (row of competition.rows; track row.team; let i = $index) {
-              <tr class="standings-row" [class.zone-champions]="row.zone === 'champions'" [class.zone-europa]="row.zone === 'europa'" [class.zone-relegation]="row.zone === 'relegation'">
+              <tr
+                class="standings-row"
+                [class.zone-champions]="row.zone === 'champions'"
+                [class.zone-europa]="row.zone === 'europa'"
+                [class.zone-relegation]="row.zone === 'relegation'"
+              >
                 <td class="col-pos">{{ row.position }}</td>
                 <td class="col-team">
                   <div class="team-cell">
@@ -67,7 +93,15 @@
                 <td class="col-form">
                   <div class="form-dots">
                     @for (res of row.form; track $index) {
-                      <span class="form-dot" [class.form-w]="res === 'W'" [class.form-d]="res === 'D'" [class.form-l]="res === 'L'" [attr.aria-label]="res === 'W' ? 'Victorie' : res === 'D' ? 'Egal' : 'Înfrângere'"></span>
+                      <span
+                        class="form-dot"
+                        [class.form-w]="res === 'W'"
+                        [class.form-d]="res === 'D'"
+                        [class.form-l]="res === 'L'"
+                        [attr.aria-label]="
+                          res === 'W' ? 'Victorie' : res === 'D' ? 'Egal' : 'Înfrângere'
+                        "
+                      ></span>
                     }
                   </div>
                 </td>
@@ -78,15 +112,20 @@
       </div>
 
       <div class="standings-legend">
-        <span class="legend-item"><span class="legend-dot zone-champions-dot"></span> Calificare</span>
+        <span class="legend-item"
+          ><span class="legend-dot zone-champions-dot"></span> Calificare</span
+        >
         <span class="legend-item"><span class="legend-dot zone-europa-dot"></span> Europa</span>
-        <span class="legend-item"><span class="legend-dot zone-relegation-dot"></span> Retrogradare</span>
+        <span class="legend-item"
+          ><span class="legend-dot zone-relegation-dot"></span> Retrogradare</span
+        >
       </div>
     </section>
   }
 
   <footer class="standings-footer">
     <span class="footer-live-dot"></span>
-    Design demonstrativ <span class="meta-separator">·</span> Coloanele: MJ = meciuri jucate, V = victorii, E = egaluri, Î = înfrângeri, GM/GP = goluri marcate/primite, DG = golaveraj, PCT = puncte
+    Coloanele: MJ = meciuri jucate, V = victorii, E = egaluri, Î = înfrângeri, GM/GP = goluri
+    marcate/primite, DG = golaveraj, PCT = puncte
   </footer>
 </section>

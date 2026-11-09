@@ -84,8 +84,9 @@ h2 {
   box-shadow: 0 0 10px rgb(183 243 107 / 55%);
 }
 
-.demo-notice {
+.data-notice {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
   border: 1px solid rgb(117 201 255 / 20%);
@@ -95,23 +96,6 @@ h2 {
   color: #b7c8d4;
   font-size: 0.82rem;
   line-height: 1.5;
-}
-
-.demo-notice strong {
-  color: var(--blue);
-}
-
-.demo-icon {
-  display: grid;
-  width: 22px;
-  height: 22px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 1px solid rgb(117 201 255 / 40%);
-  border-radius: 50%;
-  color: var(--blue);
-  font-size: 0.75rem;
-  font-weight: 800;
 }
 
 .standings-section {
@@ -148,18 +132,6 @@ h2 {
   margin: 0;
   color: var(--muted);
   font-size: 0.85rem;
-}
-
-.demo-tag {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 0.35rem 0.6rem;
-  color: var(--muted);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
 }
 
 .meta-separator {
@@ -334,4 +306,17 @@ h2 {
 
 .meta-separator {
   opacity: 0.5;
+}
+
+.data-notice button {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-hover);
+  color: var(--text);
+  cursor: pointer;
+}
+.data-notice button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }

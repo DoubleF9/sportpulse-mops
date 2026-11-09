@@ -4,17 +4,17 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sportpulse.config.ApiSportsConfig;
+import com.sportpulse.client.ApiSportsClient;
 import com.sportpulse.dto.apifootball.ApiFootballStandingsResponse;
 import com.sportpulse.dto.standings.StandingsResponse;
 import com.sportpulse.model.CachedStandings;
@@ -23,91 +23,62 @@ import com.sportpulse.repository.CachedStandingsRepository;
 @Service
 public class StandingsService {
 
-	private final RestTemplate restTemplate;
-	private final ApiSportsConfig apiSportsConfig;
+	private static final Logger log = LoggerFactory.getLogger(StandingsService.class);
+	private final ApiSportsClient client;
 	private final CachedStandingsRepository cacheRepository;
 	private final ObjectMapper objectMapper = new ObjectMapper();
 
-	public StandingsService(RestTemplate restTemplate, ApiSportsConfig apiSportsConfig,
-			CachedStandingsRepository cacheRepository) {
-		this.restTemplate = restTemplate;
-		this.apiSportsConfig = apiSportsConfig;
+	public StandingsService(ApiSportsClient client, CachedStandingsRepository cacheRepository) {
+		this.client = client;
 		this.cacheRepository = cacheRepository;
 	}
 
 	public StandingsResponse getStandings(String sport, String leagueId, String season) {
-		String cacheKey = String.format("standings:%s:%s:%s", sport, leagueId, season);
-		try {
-			var cached = cacheRepository.findByCacheKey(cacheKey);
-			if (cached.isPresent() && cached.get().getExpiresAt() != null
-					&& cached.get().getExpiresAt().isAfter(Instant.now())) {
-				Object data = cached.get().getData();
-				if (data instanceof StandingsResponse standingsResponse) {
-					return standingsResponse;
-				}
-			}
-		} catch (Exception e) {
-			// If cache fails, continue to fetch
+		if (!sport.equals("football")) {
+			throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "Clasamentele pentru acest sport nu sunt disponibile încă.");
 		}
-
-		StandingsResponse response = fetchFromApi(sport, leagueId, season);
+		String key = "standings:" + sport + ":" + leagueId + ":" + season;
+		CachedStandings cached = null;
 		try {
-			cacheRepository.save(new CachedStandings(cacheKey, sport, leagueId, season, response,
-					Instant.now().plus(6, ChronoUnit.HOURS)));
+			cached = cacheRepository.findById(key).orElse(null);
 		} catch (Exception e) {
-			// Ignore cache save failures
+			log.warn("Standings cache could not be read");
+		}
+		if (cached != null && cached.expiresAt().isAfter(Instant.now())) return cached.data();
+
+		StandingsResponse response;
+		try {
+			response = fetchFootballStandings(leagueId, season);
+		} catch (Exception e) {
+			if (cached != null) return cached.data().asStale();
+			if (e instanceof ResponseStatusException error) throw error;
+			log.warn("Standings request failed ({})", e.getClass().getSimpleName());
+			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Clasamentul nu este disponibil momentan. Încercați din nou mai târziu.");
+		}
+		try {
+			cacheRepository.save(new CachedStandings(key, response, Instant.now().plus(6, ChronoUnit.HOURS)));
+		} catch (Exception e) {
+			log.warn("Standings cache could not be saved");
 		}
 		return response;
 	}
 
-	private StandingsResponse fetchFromApi(String sport, String leagueId, String season) {
-		if ("football".equalsIgnoreCase(sport)) {
-			return fetchFootballStandings(leagueId, season);
-		}
-		return new StandingsResponse(List.of());
-	}
-
-	private StandingsResponse fetchFootballStandings(String leagueId, String season) {
-		String url = String.format("https://%s/standings?league=%s&season=%s", apiSportsConfig.getFootballHost(),
-				leagueId, season);
-
-		HttpHeaders headers = new HttpHeaders();
-		String apiKey = apiSportsConfig.getApiKey();
-		if (apiKey != null && !apiKey.isBlank()) {
-			headers.set("x-apisports-key", apiKey);
-		}
-		headers.set("Accept", "application/json");
-
-		HttpEntity<Void> entity = new HttpEntity<>(headers);
-		try {
-			ResponseEntity<String> rawResponse = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
-			if (rawResponse.getBody() == null) {
-				return new StandingsResponse(List.of());
+	private StandingsResponse fetchFootballStandings(String leagueId, String season) throws Exception {
+		var root = client.get("football", "/standings", Map.of("league", leagueId, "season", season));
+		var body = objectMapper.treeToValue(root, ApiFootballStandingsResponse.class);
+		List<StandingsResponse.StandingsTable> tables = new ArrayList<>();
+		for (var wrapper : body.response()) {
+			var league = wrapper.league();
+			if (league == null || league.standings() == null) {
+				throw new IllegalStateException("Incomplete standings response");
 			}
-			ApiFootballStandingsResponse body = objectMapper.readValue(rawResponse.getBody(), ApiFootballStandingsResponse.class);
-			if (body == null || body.response() == null || body.response().isEmpty()) {
-				return new StandingsResponse(List.of());
+			for (List<ApiFootballStandingsResponse.Standing> groupStandings : league.standings()) {
+				var rows = groupStandings.stream().map(this::mapStanding).collect(Collectors.toList());
+				String groupName = groupStandings.isEmpty() ? null : groupStandings.getFirst().group();
+				tables.add(new StandingsResponse.StandingsTable(league.name(), league.country(), groupName, rows));
 			}
-
-			List<StandingsResponse.StandingsTable> tables = new ArrayList<>();
-			for (var wrapper : body.response()) {
-				var league = wrapper.league();
-				if (league == null || league.standings() == null) {
-					continue;
-				}
-				for (List<ApiFootballStandingsResponse.Standing> groupStandings : league.standings()) {
-					List<StandingsResponse.StandingRow> rows = groupStandings.stream()
-							.map(this::mapStanding)
-							.collect(Collectors.toList());
-					String groupName = groupStandings.isEmpty() ? null : groupStandings.get(0).group();
-					tables.add(new StandingsResponse.StandingsTable(league.name(), league.country(), groupName,
-							rows));
-				}
-			}
-			return new StandingsResponse(tables);
-		} catch (Exception e) {
-			return new StandingsResponse(List.of());
 		}
+		return new StandingsResponse(tables, Instant.now(), false);
 	}
 
 	private StandingsResponse.StandingRow mapStanding(ApiFootballStandingsResponse.Standing standing) {
