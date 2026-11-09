@@ -1,0 +1,65 @@
+<fieldset class="filters" [disabled]="disabled()">
+  <legend>Filtrează meciurile</legend>
+  <div class="filter-controls">
+    <label class="country-filter" for="match-country">
+      <span>Țară</span>
+      <select id="match-country" (change)="selectCountry($event)">
+        <option value="" [selected]="!selection().country">Toate țările</option>
+        @for (country of countries(); track country) {
+          <option [value]="country" [selected]="selection().country === country">
+            {{ country }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <div class="competition-filter">
+      <span id="competition-filter-label">Competiții</span>
+      <details class="competition-picker">
+        <summary aria-labelledby="competition-filter-label competition-selection-label">
+          <span id="competition-selection-label">
+            @if (selection().competitionIds.length) {
+              {{ selection().competitionIds.length }} selectate
+            } @else {
+              Toate competițiile
+            }
+          </span>
+        </summary>
+        <div class="competition-list">
+          @for (competition of availableCompetitions(); track competition.id) {
+            <label class="competition-option" [for]="'competition-' + competition.id">
+              <input
+                type="checkbox"
+                [id]="'competition-' + competition.id"
+                [checked]="selection().competitionIds.includes(competition.id)"
+                (change)="toggleCompetition(competition.id, $event)"
+              />
+              <span
+                >{{ competition.name }} <small>{{ competition.country }}</small></span
+              >
+            </label>
+          } @empty {
+            <p>Nu există competiții disponibile.</p>
+          }
+        </div>
+        <p class="selection-hint">Fără selecție sunt afișate toate competițiile.</p>
+      </details>
+    </div>
+
+    <div class="live-filter">
+      <label for="live-only">
+        <input
+          id="live-only"
+          type="checkbox"
+          [checked]="selection().liveOnly"
+          (change)="toggleLive($event)"
+        />
+        Doar meciuri live
+      </label>
+      <small>Conform ultimei actualizări</small>
+    </div>
+    <button class="reset-filters" type="button" [disabled]="!active()" (click)="reset()">
+      Resetează filtrele
+    </button>
+  </div>
+</fieldset>

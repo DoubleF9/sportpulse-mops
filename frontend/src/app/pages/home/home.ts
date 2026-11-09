@@ -1,12 +1,17 @@
 import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import { SPORTS } from '../../models/sport';
 import { FixturesResponse } from '../../models/fixture';
-import { MatchStatus, presentFixture } from '../../models/match-presentation';
+import { isLiveMatch, MatchStatus, presentFixture } from '../../models/match-presentation';
+import {
+  emptyMatchFilters,
+  MatchFilters,
+  MatchFiltersSelection,
+} from '../../components/match-filters/match-filters';
 import { FixturesService } from '../../services/fixtures.service';
 import { HealthService } from '../../services/health.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
@@ -53,11 +58,14 @@ function dateToInputValue(date: Date): string {
 
 @Component({
   selector: 'app-home',
-  imports: [DatePipe],
+  imports: [DatePipe, MatchFilters],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
 export class Home {
+  private readonly filterState = signal<MatchFiltersSelection>(emptyMatchFilters());
+  protected readonly filters = this.filterState.asReadonly();
+  private filterSport = '';
   private readonly reload = signal(0);
   private readonly fixturesService = inject(FixturesService);
   private readonly sportSelection = inject(SportSelectionService);
@@ -111,14 +119,71 @@ export class Home {
     ),
     { initialValue: { loading: true, error: null, data: null } as ScheduleState },
   );
+  protected readonly allCompetitions = computed(() =>
+    (this.schedule().data?.competitions ?? [])
+      .filter((competition) => competition.matches.length > 0)
+      .map((competition) => ({ ...competition, country: competition.country || 'Internațional' })),
+  );
   protected readonly competitions = computed<ScheduleCompetition[]>(() => {
-    return (this.schedule().data?.competitions ?? []).map((competition) => ({
-      ...competition,
-      matches: competition.matches.map((match) =>
-        presentFixture(match, this.selectedSport(), this.browserTimeZone),
-      ),
-    }));
+    const filters = this.filters();
+    return this.allCompetitions()
+      .filter((competition) => !filters.country || competition.country === filters.country)
+      .filter(
+        (competition) =>
+          filters.competitionIds.length === 0 || filters.competitionIds.includes(competition.id),
+      )
+      .map((competition) => ({
+        ...competition,
+        matches: competition.matches
+          .filter((match) => !filters.liveOnly || isLiveMatch(match.status, this.selectedSport()))
+          .map((match) => presentFixture(match, this.selectedSport(), this.browserTimeZone)),
+      }))
+      .filter((competition) => competition.matches.length > 0);
   });
+  protected readonly totalMatches = computed(() =>
+    this.allCompetitions().reduce((total, competition) => total + competition.matches.length, 0),
+  );
+  protected readonly visibleMatches = computed(() =>
+    this.competitions().reduce((total, competition) => total + competition.matches.length, 0),
+  );
+
+  constructor() {
+    effect(() => {
+      const sport = this.selectedSport();
+      const schedule = this.schedule();
+      const competitions = this.allCompetitions();
+      untracked(() => {
+        if (this.filterSport !== sport) {
+          this.filterSport = sport;
+          this.filterState.set(emptyMatchFilters());
+        }
+        if (schedule.loading || schedule.error || !schedule.data) return;
+        const previous = this.filterState();
+        const country = competitions.some((competition) => competition.country === previous.country)
+          ? previous.country
+          : '';
+        const validIds = new Set(
+          competitions
+            .filter((competition) => !country || competition.country === country)
+            .map((competition) => competition.id),
+        );
+        const competitionIds =
+          country === previous.country
+            ? previous.competitionIds.filter((id) => validIds.has(id))
+            : [];
+        if (
+          country !== previous.country ||
+          competitionIds.length !== previous.competitionIds.length
+        ) {
+          this.filterState.set({ ...previous, country, competitionIds });
+        }
+      });
+    });
+  }
+
+  protected updateFilters(selection: MatchFiltersSelection): void {
+    this.filterState.set(selection);
+  }
 
   protected readonly backendStatus = toSignal(
     inject(HealthService)

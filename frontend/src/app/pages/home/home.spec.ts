@@ -76,6 +76,122 @@ describe('Home schedule', () => {
     };
   }
 
+  function filterResponse(): FixturesResponse {
+    const base = response().competitions[0];
+    const match = base.matches[0];
+    return {
+      ...response(),
+      competitions: [
+        {
+          ...base,
+          matches: [match, { ...match, id: 2, homeTeam: 'Live FC', status: '1H', elapsed: 12 }],
+        },
+        {
+          ...base,
+          id: 284,
+          name: 'Cupa',
+          matches: [{ ...match, id: 3, homeTeam: 'Cup FC', status: 'FT' }],
+        },
+        {
+          ...base,
+          id: 140,
+          name: 'La Liga',
+          country: 'Spania',
+          matches: [{ ...match, id: 4, homeTeam: 'Spain FC', status: '1H', elapsed: 20 }],
+        },
+        { ...base, id: 0, name: 'Empty', country: 'No games', matches: [] },
+      ],
+    };
+  }
+
+  function selectCountry(value: string) {
+    const select = body().querySelector<HTMLSelectElement>('#match-country')!;
+    select.value = value;
+    select.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+  }
+
+  it('filters by country and multiple competitions without making new HTTP requests', () => {
+    scheduleRequest().flush(filterResponse());
+    fixture.detectChanges();
+    expect(body().querySelector('#match-country')).not.toBeNull();
+    expect(body().querySelector('#match-country')!.textContent).not.toContain('No games');
+    selectCountry('România');
+    expect(body().textContent).not.toContain('Spain FC');
+    body().querySelector<HTMLInputElement>('#competition-283')!.click();
+    fixture.detectChanges();
+    expect(body().textContent).not.toContain('Cup FC');
+    body().querySelector<HTMLInputElement>('#competition-284')!.click();
+    fixture.detectChanges();
+    expect(body().querySelectorAll('.match-row').length).toBe(3);
+    selectCountry('Spania');
+    expect(body().querySelectorAll('.match-row').length).toBe(1);
+    expect(body().textContent).toContain('Spain FC');
+    http.expectNone((request) => request.url === '/api/fixtures');
+  });
+
+  it('combines Live with league selection and resets all filters', () => {
+    scheduleRequest().flush(filterResponse());
+    fixture.detectChanges();
+    selectCountry('România');
+    body().querySelector<HTMLInputElement>('#competition-283')!.click();
+    fixture.detectChanges();
+    body().querySelector<HTMLInputElement>('#live-only')!.click();
+    fixture.detectChanges();
+    expect(body().querySelectorAll('.match-row').length).toBe(1);
+    expect(body().textContent).toContain('Live FC');
+    expect(body().textContent).not.toContain('Home FC');
+    body().querySelector<HTMLButtonElement>('.reset-filters')!.click();
+    fixture.detectChanges();
+    expect(body().querySelectorAll('.match-row').length).toBe(4);
+    expect(body().querySelector<HTMLInputElement>('#live-only')!.checked).toBe(false);
+    http.expectNone((request) => request.url === '/api/fixtures');
+  });
+
+  it('keeps valid filters on a new day and clears selections absent from its schedule', () => {
+    scheduleRequest().flush(filterResponse());
+    fixture.detectChanges();
+    selectCountry('România');
+    body().querySelector<HTMLInputElement>('#competition-283')!.click();
+    fixture.detectChanges();
+    chooseDay(2);
+    scheduleRequest().flush(filterResponse());
+    TestBed.tick();
+    expect(body().querySelector<HTMLSelectElement>('#match-country')!.value).toBe('România');
+    expect(body().querySelector<HTMLInputElement>('#competition-283')!.checked).toBe(true);
+    chooseDay(4);
+    scheduleRequest().flush({ ...response(), competitions: [filterResponse().competitions[2]] });
+    TestBed.tick();
+    expect(body().querySelector<HTMLSelectElement>('#match-country')!.value).toBe('');
+    expect(body().textContent).toContain('Spain FC');
+  });
+
+  it('distinguishes no matching live games from an empty day and resets sport-specific filters', () => {
+    scheduleRequest().flush(filterResponse());
+    fixture.detectChanges();
+    selectCountry('România');
+    body().querySelector<HTMLInputElement>('#competition-284')!.click();
+    fixture.detectChanges();
+    body().querySelector<HTMLInputElement>('#live-only')!.click();
+    fixture.detectChanges();
+    expect(body().textContent).toContain('Niciun meci nu corespunde filtrelor selectate.');
+    expect(body().textContent).not.toContain('Nu există meciuri pentru această zi.');
+    sport.set('hockey');
+    TestBed.tick();
+    const hockey = filterResponse();
+    hockey.competitions[0].matches[1].status = 'P2';
+    scheduleRequest().flush(hockey);
+    TestBed.tick();
+    expect(body().querySelector<HTMLSelectElement>('#match-country')!.value).toBe('');
+    expect(body().querySelector<HTMLInputElement>('#live-only')!.checked).toBe(false);
+    expect(body().querySelectorAll('.match-row').length).toBe(4);
+    body().querySelector<HTMLInputElement>('#live-only')!.click();
+    fixture.detectChanges();
+    expect(body().querySelectorAll('.match-row').length).toBe(1);
+    expect(body().textContent).toContain('Live FC');
+    http.expectNone((request) => request.url === '/api/fixtures');
+  });
+
   it('requests today in the browser timezone and renders real fixtures without the demo label', () => {
     const request = scheduleRequest();
     const calendar = body().querySelector<HTMLInputElement>('input[type=date]')!;
