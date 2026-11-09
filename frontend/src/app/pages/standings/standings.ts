@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -7,6 +6,7 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import { SPORTS } from '../../models/sport';
 import { HealthService } from '../../services/health.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
+import { TimezoneService } from '../../services/timezone.service';
 import { StandingsResponse, StandingsService } from '../../services/standings.service';
 
 interface StandingsState {
@@ -17,11 +17,11 @@ interface StandingsState {
 
 @Component({
   selector: 'app-standings',
-  imports: [DatePipe],
   templateUrl: './standings.html',
   styleUrl: './standings.scss',
 })
 export class Standings {
+  protected readonly timezone = inject(TimezoneService);
   private readonly sportSelection = inject(SportSelectionService);
   private readonly standingsService = inject(StandingsService);
   private readonly reload = signal(0);

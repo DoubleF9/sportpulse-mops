@@ -19,7 +19,7 @@
       @if (data.stale) {
         <p class="notice" role="status">
           Datele nu au putut fi actualizate. Se afișează ultimele date salvate la
-          {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}.
+          {{ timezone.formatDateTime(data.updatedAt) }}.
         </p>
       }
       <article class="score-card" aria-label="Scorul meciului">
@@ -67,7 +67,7 @@
         <div>
           <dt>Data și ora locală</dt>
           <dd>
-            {{ (game.kickoff | date: 'dd.MM.yyyy HH:mm') || '—' }} <small>{{ timezone }}</small>
+            {{ timezone.formatDateTime(game.kickoff) }} <small>{{ timezone.timeZone() }}</small>
           </dd>
         </div>
         @if (data.sport !== 'hockey') {
@@ -85,7 +85,7 @@
           <dd>{{ data.referee || '—' }}</dd>
         </div>
       </dl>
-      <p class="updated-at">Actualizat la {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</p>
+      <p class="updated-at">Actualizat la {{ timezone.formatDateTime(data.updatedAt) }}</p>
     }
   }
 </section>

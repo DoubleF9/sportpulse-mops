@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -10,6 +9,7 @@ import { matchStatusLabel, presentFixture } from '../../models/match-presentatio
 import { Sport, SPORTS } from '../../models/sport';
 import { FixturesService } from '../../services/fixtures.service';
 import { SportSelectionService } from '../../services/sport-selection.service';
+import { TimezoneService } from '../../services/timezone.service';
 
 interface DetailsState {
   loading: boolean;
@@ -23,7 +23,7 @@ function validSport(value: string): value is Sport {
 
 @Component({
   selector: 'app-match-details',
-  imports: [DatePipe, RouterLink],
+  imports: [RouterLink],
   templateUrl: './match-details.html',
   styleUrl: './match-details.scss',
 })
@@ -33,7 +33,7 @@ export class MatchDetails {
   private readonly service = inject(FixturesService);
   private readonly sportSelection = inject(SportSelectionService);
   private readonly reload = signal(0);
-  protected readonly timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  protected readonly timezone = inject(TimezoneService);
   private readonly request = computed(() => ({
     sport: this.sport(),
     id: this.id(),
@@ -77,7 +77,7 @@ export class MatchDetails {
   );
   protected readonly match = computed(() => {
     const data = this.state().data;
-    return data ? presentFixture(data.match, data.sport, this.timezone) : null;
+    return data ? presentFixture(data.match, data.sport, this.timezone.timeZone()) : null;
   });
   protected readonly sportLabel = computed(
     () => SPORTS.find((sport) => sport.id === this.sport())?.label ?? 'Sport',

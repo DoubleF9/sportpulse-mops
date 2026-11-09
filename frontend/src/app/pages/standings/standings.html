@@ -29,7 +29,7 @@
         Datele nu au putut fi actualizate. Se afișează ultimele date salvate.
       </p>
     }
-    <p class="page-subtitle">Actualizat la {{ data.updatedAt | date: 'dd.MM.yyyy HH:mm' }}</p>
+    <p class="page-subtitle">Actualizat la {{ timezone.formatDateTime(data.updatedAt) }}</p>
     @if (!data.standings.length) {
       <p class="data-notice" role="status">Nu există date de clasament pentru selecția curentă.</p>
     }

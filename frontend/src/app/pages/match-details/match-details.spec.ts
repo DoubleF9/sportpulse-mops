@@ -8,6 +8,7 @@ import { vi } from 'vitest';
 import { routes } from '../../app.routes';
 import { MatchDetailsResponse } from '../../models/fixture';
 import { SportSelectionService } from '../../services/sport-selection.service';
+import { TimezoneService } from '../../services/timezone.service';
 import { MatchDetails } from './match-details';
 
 describe('Match details', () => {
@@ -110,6 +111,23 @@ describe('Match details', () => {
     expect(fixture.nativeElement.textContent).toContain('R3 08:14');
     expect(fixture.nativeElement.textContent).not.toContain('Scor la pauză');
     expect(TestBed.inject(SportSelectionService).selectSport).toHaveBeenCalledWith('hockey');
+  });
+
+  it('updates kickoff date and time without fetching the same match again', () => {
+    const fixture = create();
+    const data = response();
+    data.match.kickoff = '2026-07-01T21:00:00Z';
+    http.expectOne('/api/matches/football/42').flush(data);
+    const timezone = TestBed.inject(TimezoneService);
+    timezone.selectTimezone('UTC');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('01.07.2026 21:00');
+    timezone.selectTimezone('Europe/Bucharest');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('02.07.2026 00:00');
+    expect(fixture.nativeElement.textContent).toContain('Europe/Bucharest');
+    timezone.selectTimezone('');
+    http.expectNone((request) => request.url.startsWith('/api/matches/'));
   });
 
   it('handles not-found responses and retries successfully', () => {
