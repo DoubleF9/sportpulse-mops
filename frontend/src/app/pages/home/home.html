@@ -60,6 +60,18 @@
     </div>
   </section>
 
+  <app-match-filters
+    [competitions]="allCompetitions()"
+    [selection]="filters()"
+    [disabled]="schedule().loading || !!schedule().error || totalMatches() === 0"
+    (selectionChange)="updateFilters($event)"
+  />
+  @if (!schedule().loading && !schedule().error && totalMatches() > 0) {
+    <p class="timezone-label" role="status">
+      {{ visibleMatches() }} din {{ totalMatches() }} meciuri
+    </p>
+  }
+
   <section
     class="matches-section"
     aria-label="Meciuri"
@@ -73,8 +85,10 @@
         <span>{{ schedule().error }}</span>
         <button type="button" class="retry-btn" (click)="retry()">Reîncearcă</button>
       </div>
-    } @else if (competitions().length === 0) {
+    } @else if (totalMatches() === 0) {
       <p class="demo-notice" role="status">Nu există meciuri pentru această zi.</p>
+    } @else if (competitions().length === 0) {
+      <p class="demo-notice" role="status">Niciun meci nu corespunde filtrelor selectate.</p>
     }
     @if (schedule().data?.stale) {
       <p class="demo-notice" role="status">
